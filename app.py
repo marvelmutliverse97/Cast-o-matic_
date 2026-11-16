@@ -1,6 +1,7 @@
 import os
 import secrets
 import string
+import mimetypes
 
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
@@ -21,6 +22,23 @@ ROOM_CHARS = string.ascii_uppercase + string.digits
 ROOM_LENGTH = 6
 MAX_ROOM_LENGTH = 20
 current_presentations = {}
+
+
+def file_kind(filename, mime_type):
+    ext = os.path.splitext(filename.lower())[1]
+    if ext == ".pdf":
+        return "pdf"
+    if ext in {".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx"}:
+        return "office"
+    if mime_type.startswith("image/"):
+        return "image"
+    if mime_type.startswith("video/"):
+        return "video"
+    if mime_type.startswith("audio/"):
+        return "audio"
+    if mime_type.startswith("text/"):
+        return "text"
+    return "download"
 
 
 def new_room_code():
@@ -72,30 +90,32 @@ def upload_file():
 
     file = request.files["file"]
     if not file.filename:
-        return jsonify(success=False, error="Please select a PDF file"), 400
+        return jsonify(success=False, error="Please select a file"), 400
 
     filename = secure_filename(file.filename)
-    if not filename or not filename.lower().endswith(".pdf"):
-        return jsonify(success=False, error="Only PDF files are supported"), 400
+    if not filename:
+        return jsonify(success=False, error="Invalid filename"), 400
 
     # Prefix with room code to avoid filename collisions between rooms.
     stored_name = f"{room}_{filename}"
     filepath = os.path.join(UPLOAD_FOLDER, stored_name)
+    mime_type = file.mimetype or mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
     try:
         file.save(filepath)
-        with open(filepath, "rb") as pdf:
-            if not pdf.read(5).startswith(b"%PDF-"):
-                os.remove(filepath)
-                return jsonify(success=False, error="Invalid PDF file"), 400
-
-        current_presentations[room] = stored_name
+        kind = file_kind(filename, mime_type)
+        current_presentations[room] = {
+            "filename": stored_name,
+            "original_name": filename,
+            "mime": mime_type,
+            "kind": kind,
+        }
         socketio.emit(
             "presentation_update",
-            {"filename": stored_name},
+            current_presentations[room],
             to=room,
         )
-        return jsonify(success=True, filename=stored_name)
+        return jsonify(success=True, **current_presentations[room])
 
     except OSError as error:
         app.logger.exception("Upload failed")
@@ -146,10 +166,7 @@ def on_join(data):
         emit("sender_ready", {"room": room}, to=room, include_self=False)
 
         if current_presentations.get(room):
-            emit(
-                "presentation_update",
-                {"filename": current_presentations[room]},
-            )
+            emit("presentation_update", current_presentations[room])
 
 
 @socketio.on("offer")

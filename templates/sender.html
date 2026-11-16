@@ -16,14 +16,14 @@ input[type=file]{width:100%;padding:14px;border:1px dashed #4b5d7b;border-radius
 <body><div class="wrap">
 <div class="top"><div class="brand">📡 Cast-O-Matic</div><div>Room: <span class="room" id="roomCode">{{ room }}</span></div></div>
 <div class="grid">
-<section class="card"><h2>1. Share your presentation</h2><p class="small">Upload a PDF. The receiver will update automatically.</p>
-<form id="uploadForm"><input id="file" name="file" type="file" accept=".pdf,application/pdf" required><div class="actions"><button class="btn" type="submit">Upload PDF</button></div></form>
-<div id="uploadStatus" class="status">Waiting for a PDF.</div></section>
-<section class="card"><h2>2. Cast your screen</h2><p class="small">Open the receiver link on a phone or TV first, then start sharing here.</p>
+<section class="card"><h2>1. Cast a file</h2><p class="small">Upload PDF, Word, PowerPoint, Excel, images, video, audio, text and more. Unsupported formats can still be cast with Live Screen Cast.</p>
+<form id="uploadForm"><input id="file" name="file" type="file" accept="*/*" required><div class="actions"><button class="btn" type="submit">Upload &amp; Cast File</button></div></form>
+<div id="uploadStatus" class="status">No file selected yet.</div></section>
+<section class="card"><h2>2. Cast anything</h2><p class="small">Use Live Screen Cast for PowerPoint, Word, desktop apps, websites, games, browser tabs, or any content visible on your screen.</p>
 <div class="actions"><button id="start" class="btn green">Start Live Cast</button><button id="stop" class="btn red" style="display:none">Stop</button></div>
 <div id="streamStatus" class="status">Waiting for a receiver...</div>
 <h3>Receiver link</h3><div class="linkbox"><input id="receiverLink" readonly><button id="copy" class="btn gray">Copy</button></div>
-<p class="small">You can also send the room code <b>{{ room }}</b>. Each room is independent.</p>
+<p class="small">You can also send the room code <b>{{ room }}</b>. Each room is independent. For the most universal option, use Live Screen Cast.</p>
 </section></div>
 <div class="actions" style="margin-top:20px"><a class="btn gray" href="/">Home</a><a class="btn" id="openReceiver" href="/receiver?room={{ room }}" target="_blank">Open Receiver</a></div>
 </div>
@@ -39,7 +39,8 @@ socket.on("answer",async answer=>{if(!pc)return;await pc.setRemoteDescription(ne
 socket.on("ice-candidate",async data=>{const c=data&&data.candidate;if(!c)return;if(!pc||!pc.remoteDescription){pending.push(c);return}try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch(e){console.error(e)}});
 socket.on("peer_left",()=>{if(pc){pc.close();pc=null}receiverReady=false;statusEl.textContent="Receiver disconnected. Open the receiver again to continue.";});
 async function flushCandidates(){for(const c of pending){try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch(e){}}pending=[]}
-document.getElementById("uploadForm").onsubmit=async e=>{e.preventDefault();const f=document.getElementById("file").files[0];if(!f)return;const fd=new FormData();fd.append("file",f);fd.append("room",ROOM);document.getElementById("uploadStatus").textContent="Uploading...";try{const r=await fetch("/upload",{method:"POST",body:fd});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||"Upload failed");document.getElementById("uploadStatus").textContent="✓ Uploaded and sent to room."}catch(err){document.getElementById("uploadStatus").textContent="Upload failed: "+err.message}};
+document.getElementById("uploadForm").onsubmit=async e=>{e.preventDefault();const f=document.getElementById("file").files[0];if(!f)return;const fd=new FormData();fd.append("file",f);fd.append("room",ROOM);document.getElementById("uploadStatus").textContent="Uploading and sending...";try{const r=await fetch("/upload",{method:"POST",body:fd});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||"Upload failed");document.getElementById("uploadStatus").innerHTML="✓ <b>"+escapeHtml(d.original_name)+"</b> is ready on the receiver."}catch(err){document.getElementById("uploadStatus").textContent="Upload failed: "+err.message}};
+function escapeHtml(v){return String(v).replace(/[&<>\"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[m]))}
 start.onclick=async()=>{if(!receiverReady){statusEl.textContent="Open the Receiver link on your phone/TV first.";return}if(pc)return;try{localStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});pc=new RTCPeerConnection(rtcConfig);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));pc.onicecandidate=e=>{if(e.candidate)socket.emit("ice-candidate",{room:ROOM,candidate:e.candidate.toJSON()})};pc.onconnectionstatechange=()=>{if(pc)statusEl.textContent="Live cast: "+pc.connectionState};await new Promise(r=>setTimeout(r,100));const offer=await pc.createOffer();await pc.setLocalDescription(offer);socket.emit("offer",{room:ROOM,offer:pc.localDescription});start.style.display="none";stop.style.display="inline-block";statusEl.textContent="Live cast started.";localStream.getVideoTracks()[0].onended=stopCast}catch(e){statusEl.textContent="Screen sharing failed: "+e.message;stopCast()}};
 function stopCast(){if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}if(pc){pc.close();pc=null}pending=[];start.style.display="inline-block";stop.style.display="none";statusEl.textContent=receiverReady?"Receiver connected. Ready to cast again.":"Waiting for a receiver..."}
 stop.onclick=stopCast;

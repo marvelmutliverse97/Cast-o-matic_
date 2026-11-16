@@ -110,3 +110,13 @@ cast-o-matic/
 ## Important deployment note
 
 For a classroom demo on the same network, the server must be reachable by the receiver device. For many independent users, deploy the app to a reachable server/domain and use HTTPS. Users then open the website and use room links/codes instead of manually entering a machine's IP address.
+
+
+## Universal casting
+
+Cast-O-Matic supports two modes:
+
+- **File Cast:** upload PDF, Word, PowerPoint, Excel, images, video, audio, text and other files up to 50 MB. Browser-supported formats are displayed directly; Office documents use the public Microsoft Office viewer; other formats can be downloaded on the receiver.
+- **Live Screen Cast:** use WebRTC `getDisplayMedia()` to cast any visible desktop window, browser tab, presentation, document, video, website or application. This is the universal fallback for formats that a receiver browser cannot render directly.
+
+The receiver is a normal HTTPS web page, so users do not need to enter a local IP address. They only need the public receiver link or room code.
