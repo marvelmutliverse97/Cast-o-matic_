@@ -191,4 +191,10 @@ def file_too_large(error):
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5080)), debug=False)
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5080)),
+        debug=False,
+        allow_unsafe_werkzeug=True
+    )
