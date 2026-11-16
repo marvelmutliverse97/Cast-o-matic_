@@ -5,6 +5,7 @@
 <meta name="theme-color" content="#0b1020"><link rel="manifest" href="/manifest.json">
 <title>Cast-O-Matic • Presenter</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#080d18;color:#f8fafc;font-family:Inter,Arial,sans-serif}.wrap{max-width:1000px;margin:auto;padding:22px 16px 50px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:10px}.brand{font-weight:800;font-size:22px}.room{background:#15213a;border:1px solid #334765;padding:9px 13px;border-radius:10px;font-weight:800;letter-spacing:2px}
@@ -22,9 +23,27 @@ input[type=file]{width:100%;padding:14px;border:1px dashed #4b5d7b;border-radius
 <section class="card"><h2>2. Cast anything</h2><p class="small">Use Live Screen Cast for PowerPoint, Word, desktop apps, websites, games, browser tabs, or any content visible on your screen.</p>
 <div class="actions"><button id="start" class="btn green">Start Live Cast</button><button id="stop" class="btn red" style="display:none">Stop</button></div>
 <div id="streamStatus" class="status">Waiting for a receiver...</div>
-<h3>Receiver link</h3><div class="linkbox"><input id="receiverLink" readonly><button id="copy" class="btn gray">Copy</button></div>
-<p class="small">You can also send the room code <b>{{ room }}</b>. Each room is independent. For the most universal option, use Live Screen Cast.</p>
-</section></div>
+<h3>Scan to Join</h3>
+
+<div id="qrcode" style="
+    width:180px;
+    height:180px;
+    background:white;
+    padding:10px;
+    border-radius:12px;
+    margin:12px 0;
+"></div>
+
+<p class="small">
+    Scan this QR code with your phone or tablet to open the receiver automatically.
+</p>
+
+<h3>Receiver link</h3>
+<div class="linkbox">
+    <input id="receiverLink" readonly>
+    <button id="copy" class="btn gray">Copy</button>
+</div>
+
 <div class="actions" style="margin-top:20px"><a class="btn gray" href="/">Home</a><a class="btn" id="openReceiver" href="/receiver?room={{ room }}" target="_blank">Open Receiver</a></div>
 </div>
 <script>
@@ -32,7 +51,16 @@ const socket=io();const ROOM={{ room|tojson }};let pc=null,localStream=null,pend
 const rtcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
 const statusEl=document.getElementById("streamStatus");
 const start=document.getElementById("start"),stop=document.getElementById("stop");
-document.getElementById("receiverLink").value=location.origin+"/receiver?room="+encodeURIComponent(ROOM);
+const receiverUrl = location.origin + "/receiver?room=" + encodeURIComponent(ROOM);
+
+document.getElementById("receiverLink").value = receiverUrl;
+
+new QRCode(document.getElementById("qrcode"), {
+    text: receiverUrl,
+    width: 160,
+    height: 160,
+    correctLevel: QRCode.CorrectLevel.M
+});
 socket.on("connect",()=>socket.emit("join",{room:ROOM,role:"sender"}));
 socket.on("receiver_ready",()=>{receiverReady=true;statusEl.textContent="Receiver connected. You can start the live cast.";});
 socket.on("answer",async answer=>{if(!pc)return;await pc.setRemoteDescription(new RTCSessionDescription(answer));await flushCandidates();});
