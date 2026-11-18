@@ -1,77 +1,242 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0b1020"><link rel="manifest" href="/manifest.json">
-<title>Cast-O-Matic • Presenter</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#0b1020">
+<link rel="manifest" href="/manifest.json">
+<title>Cast-O-Matic | Presenter</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#080d18;color:#f8fafc;font-family:Inter,Arial,sans-serif}.wrap{max-width:1000px;margin:auto;padding:22px 16px 50px}
-.top{display:flex;justify-content:space-between;align-items:center;gap:10px}.brand{font-weight:800;font-size:22px}.room{background:#15213a;border:1px solid #334765;padding:9px 13px;border-radius:10px;font-weight:800;letter-spacing:2px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:25px}.card{background:#111b30;border:1px solid #263754;border-radius:18px;padding:24px}.card h2{margin-top:0}
-input[type=file]{width:100%;padding:14px;border:1px dashed #4b5d7b;border-radius:12px;background:#0b1324;color:#cbd5e1}.btn{border:0;border-radius:11px;padding:13px 17px;background:#4f8cff;color:#fff;font-weight:700;cursor:pointer;font-size:15px}.btn.green{background:#10b981}.btn.red{background:#ef4444}.btn.gray{background:#334155}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}.status{margin-top:16px;padding:12px;border-radius:10px;background:#0b1324;color:#b9c5d8;line-height:1.5}.linkbox{display:flex;gap:8px;margin-top:10px}.linkbox input{flex:1;background:#0b1324;color:#cbd5e1;border:1px solid #334155;border-radius:9px;padding:10px}.small{color:#8fa0ba;font-size:13px;line-height:1.5}
-@media(max-width:760px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.room{align-self:stretch;text-align:center}}
+*{box-sizing:border-box}body{margin:0;background:#070b14;color:#f5f7fb;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}.wrap{max-width:1080px;margin:auto;padding:22px 16px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:14px}.brand{font-size:22px;font-weight:800}.room{background:#111d32;border:1px solid #354663;padding:9px 13px;border-radius:10px;font-weight:800;letter-spacing:2px}.mode{font-size:12px;color:#9fb2d0;border:1px solid #33445f;border-radius:999px;padding:7px 10px;margin-left:auto}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}.card{background:#0f182a;border:1px solid #273754;border-radius:18px;padding:24px}.card h2{margin:0 0 9px}.small{color:#9eacc2;font-size:13px;line-height:1.6}.btn{border:0;border-radius:10px;padding:12px 16px;background:#4f8cff;color:#fff;font-weight:750;cursor:pointer;font-size:14px}.btn.green{background:#0eaa78}.btn.red{background:#d94848}.btn.gray{background:#26344c}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}.status{margin-top:14px;padding:12px;border-radius:10px;background:#0a1220;border:1px solid #202f48;color:#b8c5d9;line-height:1.5;min-height:44px}.linkbox{display:flex;gap:8px;margin-top:10px}.linkbox input{flex:1;min-width:0;background:#09111f;color:#dce5f3;border:1px solid #33445f;border-radius:9px;padding:11px}.qr{width:190px;height:190px;background:#fff;padding:12px;border-radius:12px;margin-top:12px}.network{display:none;margin-top:14px;padding:13px;background:#0a1220;border:1px solid #2c3d59;border-radius:11px}.network b{display:block;margin-bottom:5px}.count{font-size:13px;color:#9fb0c8;margin-top:10px}.warning{color:#f6c86b}.success{color:#72ddb7}.error{color:#ff8d8d}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-wrap:wrap}.mode{margin-left:0}.room{margin-left:auto}}
 </style>
 </head>
-<body><div class="wrap">
-<div class="top"><div class="brand">📡 Cast-O-Matic</div><div>Room: <span class="room" id="roomCode">{{ room }}</span></div></div>
-<div class="grid">
-<section class="card"><h2>1. Cast a file</h2><p class="small">Upload PDF, Word, PowerPoint, Excel, images, video, audio, text and more. Unsupported formats can still be cast with Live Screen Cast.</p>
-<form id="uploadForm"><input id="file" name="file" type="file" accept="*/*" required><div class="actions"><button class="btn" type="submit">Upload &amp; Cast File</button></div></form>
-<div id="uploadStatus" class="status">No file selected yet.</div></section>
-<section class="card"><h2>2. Cast anything</h2><p class="small">Use Live Screen Cast for PowerPoint, Word, desktop apps, websites, games, browser tabs, or any content visible on your screen.</p>
-<div class="actions"><button id="start" class="btn green">Start Live Cast</button><button id="stop" class="btn red" style="display:none">Stop</button></div>
-<div id="streamStatus" class="status">Waiting for a receiver...</div>
-<h3>Scan to Join</h3>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">Cast-O-Matic</div>
+    <div class="mode" id="modeLabel">Online Session</div>
+    <div>Room: <span class="room">{{ room }}</span></div>
+  </div>
 
-<div id="qrcode" style="
-    width:180px;
-    height:180px;
-    background:white;
-    padding:10px;
-    border-radius:12px;
-    margin:12px 0;
-"></div>
+  <div class="grid">
+    <section class="card">
+      <h2>Content Casting</h2>
+      <p class="small">Upload a supported presentation, document, image, video, audio or text file. The receiver opens the content automatically.</p>
+      <form id="uploadForm">
+        <input id="file" name="file" type="file" accept="*/*" required style="width:100%;padding:13px;border:1px dashed #465a7b;border-radius:11px;background:#09111f;color:#cbd5e1">
+        <div class="actions"><button class="btn" type="submit">Upload and Cast</button></div>
+      </form>
+      <div id="uploadStatus" class="status">Ready for a file.</div>
+    </section>
 
-<p class="small">
-    Scan this QR code with your phone or tablet to open the receiver automatically.
-</p>
+    <section class="card">
+      <h2>Live Screen Casting</h2>
+      <p class="small">Share a desktop, browser tab, application window or any content visible on the presenter screen.</p>
+      <div class="actions">
+        <button id="start" class="btn green" type="button">Start Live Cast</button>
+        <button id="stop" class="btn red" type="button" style="display:none">Stop</button>
+      </div>
+      <div id="streamStatus" class="status">Waiting for a receiver.</div>
+      <div class="count" id="receiverCount">Receivers connected: 0</div>
+    </section>
 
-<h3>Receiver link</h3>
-<div class="linkbox">
-    <input id="receiverLink" readonly>
-    <button id="copy" class="btn gray">Copy</button>
+    <section class="card">
+      <h2>Join This Session</h2>
+      <p class="small">Open the receiver link on a phone, tablet, laptop, compatible smart-TV browser or network display.</p>
+      <div id="qrcode" class="qr"></div>
+      <div class="small" style="margin-top:10px">Scan the QR code to join this room.</div>
+      <h3 style="margin-top:22px">Receiver URL</h3>
+      <div class="linkbox"><input id="receiverLink" readonly><button id="copy" class="btn gray" type="button">Copy</button></div>
+      <div class="actions">
+        <a class="btn gray" href="/">Home</a>
+        <a class="btn" id="openReceiver" href="/receiver?room={{ room }}" target="_blank">Open Receiver</a>
+      </div>
+    </section>
+
+    <section class="card" id="networkCard">
+      <h2>Offline LAN Connection</h2>
+      <p class="small">Offline mode uses the presenter's laptop as the local server. Connect all devices to the same Wi-Fi network. Internet access is not required for the application server.</p>
+      <div id="networkInfo" class="network"></div>
+      <div class="status" id="offlineStatus">Preparing local network information...</div>
+    </section>
+  </div>
 </div>
 
-<div class="actions" style="margin-top:20px"><a class="btn gray" href="/">Home</a><a class="btn" id="openReceiver" href="/receiver?room={{ room }}" target="_blank">Open Receiver</a></div>
-</div>
 <script>
-const socket=io();const ROOM={{ room|tojson }};let pc=null,localStream=null,pending=[];let receiverReady=false;
+const socket=io();
+const ROOM={{ room|tojson }};
+const MODE={{ mode|tojson }};
 const rtcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+const peers=new Map();
+let localStream=null;
+let receiverReadyCount=0;
+
+const start=document.getElementById("start");
+const stop=document.getElementById("stop");
 const statusEl=document.getElementById("streamStatus");
-const start=document.getElementById("start"),stop=document.getElementById("stop");
-const receiverUrl = location.origin + "/receiver?room=" + encodeURIComponent(ROOM);
+const receiverCountEl=document.getElementById("receiverCount");
+const receiverLink=document.getElementById("receiverLink");
+const receiverUrl=location.origin+"/receiver?room="+encodeURIComponent(ROOM);
+receiverLink.value=receiverUrl;
 
-document.getElementById("receiverLink").value = receiverUrl;
+document.getElementById("modeLabel").textContent=MODE==="offline"?"Offline LAN Session":"Online Session";
 
-new QRCode(document.getElementById("qrcode"), {
-    text: receiverUrl,
-    width: 160,
-    height: 160,
-    correctLevel: QRCode.CorrectLevel.M
-});
+new QRCode(document.getElementById("qrcode"),{text:receiverUrl,width:164,height:164,correctLevel:QRCode.CorrectLevel.M});
+
+function escapeHtml(v){
+  return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+}
+function updateCount(){
+  receiverCountEl.textContent="Receivers connected: "+peers.size;
+}
+function closePeer(id){
+  const item=peers.get(id);
+  if(item){try{item.pc.close()}catch(e){}}
+  peers.delete(id);
+  updateCount();
+}
+async function flushCandidates(item){
+  for(const c of item.pending){
+    try{await item.pc.addIceCandidate(new RTCIceCandidate(c))}catch(e){}
+  }
+  item.pending=[];
+}
+function attachStream(item,stream){
+  const senders=item.pc.getSenders();
+  for(const track of stream.getTracks()){
+    const sender=senders.find(x=>x.track?.kind===track.kind);
+    if(sender)sender.replaceTrack(track);
+    else item.pc.addTrack(track,stream);
+  }
+}
+async function createPeer(receiverId){
+  if(peers.has(receiverId))return;
+  const pc=new RTCPeerConnection(rtcConfig);
+  const item={pc,pending:[]};
+  peers.set(receiverId,item);
+  updateCount();
+
+  if(localStream)attachStream(item,localStream);
+
+  pc.onicecandidate=e=>{
+    if(e.candidate){
+      socket.emit("ice-candidate",{room:ROOM,target:receiverId,candidate:e.candidate.toJSON()});
+    }
+  };
+  pc.onconnectionstatechange=()=>{
+    if(!peers.has(receiverId))return;
+    const state=pc.connectionState;
+    if(state==="connected")statusEl.textContent="Live cast connected to "+peers.size+" receiver"+(peers.size===1?"":"s")+".";
+    if(["failed","closed"].includes(state))closePeer(receiverId);
+    if(state==="disconnected")statusEl.textContent="Receiver connection interrupted. Reconnecting...";
+  };
+
+  if(localStream){
+    const offer=await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    socket.emit("offer",{room:ROOM,target:receiverId,offer:pc.localDescription});
+  }
+}
 socket.on("connect",()=>socket.emit("join",{room:ROOM,role:"sender"}));
-socket.on("receiver_ready",()=>{receiverReady=true;statusEl.textContent="Receiver connected. You can start the live cast.";});
-socket.on("answer",async answer=>{if(!pc)return;await pc.setRemoteDescription(new RTCSessionDescription(answer));await flushCandidates();});
-socket.on("ice-candidate",async data=>{const c=data&&data.candidate;if(!c)return;if(!pc||!pc.remoteDescription){pending.push(c);return}try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch(e){console.error(e)}});
-socket.on("peer_left",()=>{if(pc){pc.close();pc=null}receiverReady=false;statusEl.textContent="Receiver disconnected. Open the receiver again to continue.";});
-async function flushCandidates(){for(const c of pending){try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch(e){}}pending=[]}
-document.getElementById("uploadForm").onsubmit=async e=>{e.preventDefault();const f=document.getElementById("file").files[0];if(!f)return;const fd=new FormData();fd.append("file",f);fd.append("room",ROOM);document.getElementById("uploadStatus").textContent="Uploading and sending...";try{const r=await fetch("/upload",{method:"POST",body:fd});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||"Upload failed");document.getElementById("uploadStatus").innerHTML="✓ <b>"+escapeHtml(d.original_name)+"</b> is ready on the receiver."}catch(err){document.getElementById("uploadStatus").textContent="Upload failed: "+err.message}};
-function escapeHtml(v){return String(v).replace(/[&<>\"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[m]))}
-start.onclick=async()=>{if(!receiverReady){statusEl.textContent="Open the Receiver link on your phone/TV first.";return}if(pc)return;try{localStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});pc=new RTCPeerConnection(rtcConfig);localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));pc.onicecandidate=e=>{if(e.candidate)socket.emit("ice-candidate",{room:ROOM,candidate:e.candidate.toJSON()})};pc.onconnectionstatechange=()=>{if(pc)statusEl.textContent="Live cast: "+pc.connectionState};await new Promise(r=>setTimeout(r,100));const offer=await pc.createOffer();await pc.setLocalDescription(offer);socket.emit("offer",{room:ROOM,offer:pc.localDescription});start.style.display="none";stop.style.display="inline-block";statusEl.textContent="Live cast started.";localStream.getVideoTracks()[0].onended=stopCast}catch(e){statusEl.textContent="Screen sharing failed: "+e.message;stopCast()}};
-function stopCast(){if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}if(pc){pc.close();pc=null}pending=[];start.style.display="inline-block";stop.style.display="none";statusEl.textContent=receiverReady?"Receiver connected. Ready to cast again.":"Waiting for a receiver..."}
+socket.on("join_error",d=>{statusEl.innerHTML='<span class="error">'+escapeHtml(d?.message||"Could not join the room.")+"</span>"});
+socket.on("receiver_ready",async d=>{
+  receiverReadyCount++;
+  await createPeer(d.receiver_id);
+  statusEl.textContent="Receiver connected. Ready to cast.";
+});
+socket.on("answer",async d=>{
+  const id=d?.receiver_id;
+  const item=peers.get(id);
+  if(!item)return;
+  try{await item.pc.setRemoteDescription(new RTCSessionDescription(d.answer));await flushCandidates(item)}catch(e){console.error(e)}
+});
+socket.on("ice-candidate",async d=>{
+  const id=d?.peer_id;
+  const item=peers.get(id);
+  if(!item||!d.candidate)return;
+  if(!item.pc.remoteDescription)item.pending.push(d.candidate);
+  else{try{await item.pc.addIceCandidate(new RTCIceCandidate(d.candidate))}catch(e){}}
+});
+socket.on("peer_left",d=>{
+  if(d?.peer_id)closePeer(d.peer_id);
+  if(!peers.size && !localStream)statusEl.textContent="Waiting for a receiver.";
+});
+
+document.getElementById("uploadForm").onsubmit=async e=>{
+  e.preventDefault();
+  const f=document.getElementById("file").files[0];
+  if(!f)return;
+  const fd=new FormData();fd.append("file",f);fd.append("room",ROOM);
+  const out=document.getElementById("uploadStatus");
+  out.textContent="Uploading and sending...";
+  try{
+    const r=await fetch("/upload",{method:"POST",body:fd});
+    const d=await r.json();
+    if(!r.ok||!d.success)throw new Error(d.error||"Upload failed");
+    out.innerHTML='<span class="success">Uploaded: <b>'+escapeHtml(d.original_name)+"</b>. Receiver updated.</span>";
+  }catch(err){out.innerHTML='<span class="error">Upload failed: '+escapeHtml(err.message)+"</span>"}
+};
+
+start.onclick=async()=>{
+  if(!peers.size){
+    statusEl.textContent="Open the receiver link or scan the QR code first.";
+    return;
+  }
+  if(localStream)return;
+  if(!navigator.mediaDevices?.getDisplayMedia){
+    statusEl.textContent="This browser cannot start screen sharing. Use a supported desktop browser as the presenter.";
+    return;
+  }
+  try{
+    statusEl.textContent="Requesting screen-sharing permission...";
+    localStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
+    for(const [id,item] of peers){
+      attachStream(item,localStream);
+      const offer=await item.pc.createOffer();
+      await item.pc.setLocalDescription(offer);
+      socket.emit("offer",{room:ROOM,target:id,offer:item.pc.localDescription});
+    }
+    const videoTrack=localStream.getVideoTracks()[0];
+    if(videoTrack)videoTrack.onended=stopCast;
+    start.style.display="none";stop.style.display="inline-block";
+    statusEl.textContent="Live cast started.";
+  }catch(error){
+    console.error(error);
+    localStream=null;
+    statusEl.textContent=error.name==="NotAllowedError"?"Screen-sharing permission was denied.":"Live screen cast failed: "+error.message;
+  }
+};
+
+function stopCast(){
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}
+  start.style.display="inline-block";stop.style.display="none";
+  statusEl.textContent=peers.size?"Live cast stopped. Ready to start again.":"Waiting for a receiver.";
+}
 stop.onclick=stopCast;
-document.getElementById("copy").onclick=async()=>{try{await navigator.clipboard.writeText(document.getElementById("receiverLink").value);document.getElementById("copy").textContent="Copied!"}catch(e){document.getElementById("receiverLink").select();document.execCommand("copy");document.getElementById("copy").textContent="Copied!"}setTimeout(()=>document.getElementById("copy").textContent="Copy",1500)};
+
+document.getElementById("copy").onclick=async()=>{
+  const btn=document.getElementById("copy");
+  try{await navigator.clipboard.writeText(receiverLink.value)}catch(e){receiverLink.select();document.execCommand("copy")}
+  btn.textContent="Copied";setTimeout(()=>btn.textContent="Copy",1500);
+};
+
+async function loadNetworkInfo(){
+  if(MODE!=="offline")return;
+  const box=document.getElementById("networkInfo"),status=document.getElementById("offlineStatus");
+  try{
+    const r=await fetch("/network-info");const d=await r.json();
+    const localUrl="http://"+d.local_ip+":"+d.port+"/receiver?room="+encodeURIComponent(ROOM);
+    box.style.display="block";
+    box.innerHTML="<b>Local receiver URL</b><div style='word-break:break-all'>"+escapeHtml(localUrl)+"</div>";
+    status.innerHTML='<span class="success">Connect every device to the same Wi-Fi and open the local receiver URL.</span>';
+  }catch(e){status.innerHTML='<span class="warning">Could not determine the LAN address. Use the laptop IPv4 address manually.</span>'}
+}
+loadNetworkInfo();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
-</script></body></html>
+</script>
+</body>
+</html>

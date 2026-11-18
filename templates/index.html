@@ -1,52 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0b1020">
-  <meta name="description" content="Cast-O-Matic - cross-device presentation casting">
-  <link rel="manifest" href="/manifest.json">
-  <title>Cast-O-Matic</title>
-  <style>
-    *{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:linear-gradient(135deg,#080d1a,#111a33);color:#f8fafc;min-height:100vh}
-    .wrap{max-width:1050px;margin:auto;padding:28px 18px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px}
-    .brand{font-weight:800;font-size:24px}.pill{border:1px solid #334155;border-radius:999px;padding:7px 12px;font-size:12px;color:#cbd5e1}
-    .hero{text-align:center;padding:70px 10px 35px}.hero h1{font-size:clamp(38px,7vw,72px);margin:0 0 12px}.hero p{max-width:680px;margin:0 auto;color:#b9c3d4;font-size:18px;line-height:1.6}
-    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:800px;margin:35px auto}
-    .card{background:rgba(18,27,49,.9);border:1px solid #263653;border-radius:20px;padding:28px;box-shadow:0 20px 50px rgba(0,0,0,.22)}
-    .card h2{margin-top:0}.card p{color:#aebbd0;line-height:1.5}.btn{display:block;width:100%;padding:14px 18px;border:0;border-radius:12px;background:#4f8cff;color:white;font-weight:700;font-size:16px;cursor:pointer;text-decoration:none;text-align:center;margin-top:18px}.btn.secondary{background:#24324e}
-    .join{max-width:800px;margin:0 auto}.joinrow{display:flex;gap:10px}.joinrow input{flex:1;min-width:0;padding:14px;border-radius:12px;border:1px solid #3a4a68;background:#0c1426;color:white;font-size:18px;text-transform:uppercase}
-    .joinrow .btn{width:auto;margin:0}.foot{text-align:center;color:#77859d;font-size:13px;margin-top:35px}
-    @media(max-width:700px){.grid{grid-template-columns:1fr}.hero{padding-top:45px}.top{align-items:flex-start}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#0b1020">
+<meta name="description" content="Cast-O-Matic wireless presentation and screen casting">
+<link rel="manifest" href="/manifest.json">
+<title>Cast-O-Matic | Wireless Presentation</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#070b14;color:#eef2f7}
+body{background:radial-gradient(circle at top,#14213b 0,#080d18 45%,#050810 100%)}
+.wrap{max-width:1080px;margin:auto;padding:24px 18px 48px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.brand{font-size:22px;font-weight:800;letter-spacing:.2px}.badge{font-size:12px;color:#aebbd0;border:1px solid #31405c;padding:7px 11px;border-radius:999px}
+.hero{text-align:center;padding:72px 8px 42px}.eyebrow{text-transform:uppercase;letter-spacing:2px;font-size:12px;color:#7ea9ff;font-weight:800}.hero h1{font-size:clamp(38px,7vw,72px);line-height:1;margin:14px 0}.hero p{max-width:720px;margin:auto;color:#aebbd0;font-size:17px;line-height:1.65}
+.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;max-width:900px;margin:0 auto}.card{background:rgba(14,23,41,.94);border:1px solid #273754;border-radius:18px;padding:26px;box-shadow:0 18px 50px rgba(0,0,0,.2)}.card h2{margin:0 0 8px}.card p{color:#aebbd0;line-height:1.55}.tag{display:inline-block;font-size:11px;color:#9db7e9;border:1px solid #334765;border-radius:999px;padding:5px 8px;margin-bottom:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:46px;border:0;border-radius:11px;background:#4f8cff;color:#fff;text-decoration:none;font-weight:750;cursor:pointer;padding:12px 16px;font-size:15px}.btn.secondary{background:#202d45}.btn.outline{background:transparent;border:1px solid #3a4b69}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.join{max-width:900px;margin:18px auto 0}.joinrow{display:flex;gap:10px}.joinrow input{flex:1;min-width:0;height:46px;border:1px solid #354662;background:#080f1e;color:#fff;border-radius:11px;padding:0 14px;font-size:16px;text-transform:uppercase;letter-spacing:2px}.joinrow .btn{width:auto;min-width:120px}
+.features{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:28px auto 0;max-width:900px}.feature{padding:17px;border:1px solid #24334d;background:rgba(10,17,31,.72);border-radius:14px}.feature b{display:block;margin-bottom:5px}.feature span{font-size:12px;color:#91a0b7;line-height:1.45}
+.scanner{position:fixed;inset:0;background:rgba(2,5,11,.92);display:none;align-items:center;justify-content:center;padding:18px;z-index:100}.scanner.open{display:flex}.scanner-card{width:min(460px,100%);background:#0d1627;border:1px solid #33435f;border-radius:18px;padding:20px}.scanner-head{display:flex;justify-content:space-between;align-items:center}.scanner-head h3{margin:0}.close{background:#24324a;color:#fff;border:0;border-radius:9px;padding:8px 11px;cursor:pointer}.reader{width:100%;margin-top:15px;border-radius:12px;overflow:hidden;background:#000}.scan-status{color:#aebbd0;font-size:13px;line-height:1.5;margin:12px 0 0}.footer{text-align:center;color:#66758d;font-size:12px;margin-top:28px}
+@media(max-width:760px){.modes,.features{grid-template-columns:1fr 1fr}.hero{padding-top:50px}.actions{grid-template-columns:1fr}}
+@media(max-width:520px){.modes,.features{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.joinrow{flex-direction:column}.joinrow .btn{width:100%}}
+</style>
+<script src="https://unpkg.com/html5-qrcode" defer></script>
 </head>
 <body>
 <div class="wrap">
-  <div class="top"><div class="brand">📡 Cast-O-Matic</div><div class="pill">Web App • PWA • WebRTC</div></div>
+  <div class="top"><div class="brand">Cast-O-Matic</div><div class="badge">Wireless Presentation System</div></div>
   <section class="hero">
-    <h1>Cast anywhere.</h1>
-    <p>Cast PDFs, Word, PowerPoint, Excel, images, videos, websites, desktop apps and more to a phone, tablet, laptop or smart-TV browser. No projector hardware required.</p>
+    <div class="eyebrow">Present. Connect. Display.</div>
+    <h1>One room. Any screen.</h1>
+    <p>Share presentations, files, browser content or your live screen with phones, tablets, laptops and compatible smart-TV or network-display browsers.</p>
   </section>
-  <div class="grid">
-    <div class="card">
-      <h2>🎤 Start a presentation</h2>
-      <p>Create a private room, upload a file, or share your entire screen. Send the receiver link to any phone, tablet or TV browser.</p>
-      <a class="btn" href="/sender">Create presentation room</a>
+
+  <section class="modes">
+    <article class="card">
+      <span class="tag">ONLINE</span>
+      <h2>Start a presentation</h2>
+      <p>Use the deployed Cast-O-Matic service when the presenter and receiver have Internet access.</p>
+      <a class="btn" href="/sender?mode=online">Create Online Session</a>
+    </article>
+    <article class="card">
+      <span class="tag">LOCAL WI-FI</span>
+      <h2>Offline LAN mode</h2>
+      <p>Run Cast-O-Matic on the presenter laptop and connect devices on the same Wi-Fi network. Internet access is not required for the application server.</p>
+      <a class="btn secondary" href="/sender?mode=offline">Create Offline Session</a>
+    </article>
+  </section>
+
+  <section class="card join" style="margin-top:18px">
+    <span class="tag">RECEIVER</span>
+    <h2>Connect to a presentation</h2>
+    <p>Scan the presenter's session QR code or enter the room code.</p>
+    <div class="actions">
+      <button class="btn" id="scanBtn" type="button">Scan QR Code</button>
+      <button class="btn outline" id="recentBtn" type="button" style="display:none">Reconnect to Recent Session</button>
     </div>
-    <div class="card">
-      <h2>📺 Join a display</h2>
-      <p>Enter the room code supplied by the presenter. This device becomes the receiver screen for files or live screen casting.</p>
-      <div class="joinrow">
-        <input id="room" maxlength="20" placeholder="ROOM CODE" autocomplete="off">
-        <button class="btn" onclick="joinRoom()">Join</button>
-      </div>
+    <div class="joinrow" style="margin-top:12px">
+      <input id="room" maxlength="20" placeholder="ROOM CODE" autocomplete="off" aria-label="Room code">
+      <button class="btn" id="joinBtn" type="button">Connect</button>
     </div>
-  </div>
-  <div class="foot">One website • separate rooms • mobile & TV friendly</div>
+  </section>
+
+  <section class="features">
+    <div class="feature"><b>Live Screen</b><span>Share a desktop, browser tab or application.</span></div>
+    <div class="feature"><b>File Casting</b><span>PDF, Office files, images, video, audio and text.</span></div>
+    <div class="feature"><b>Multi-Device</b><span>Receiver pages adapt to phones, tablets and large displays.</span></div>
+    <div class="feature"><b>Room Based</b><span>Each presentation uses a separate session code.</span></div>
+  </section>
+  <div class="footer">Cast-O-Matic • Browser-based • WebRTC</div>
 </div>
+
+<div class="scanner" id="scanner">
+  <div class="scanner-card">
+    <div class="scanner-head"><h3>Scan Session QR Code</h3><button class="close" id="closeScanner" type="button">Close</button></div>
+    <div id="reader" class="reader"></div>
+    <p class="scan-status" id="scanStatus">Allow camera access and point the camera at the presenter's QR code.</p>
+  </div>
+</div>
+
 <script>
-function joinRoom(){const r=document.getElementById('room').value.trim().toUpperCase();if(!r)return;location.href='/receiver?room='+encodeURIComponent(r)}
-if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}
+const roomInput=document.getElementById("room");
+const recentBtn=document.getElementById("recentBtn");
+let scanner=null;
+
+function connectRoom(value){
+  const room=String(value||"").trim().toUpperCase();
+  if(!room){ roomInput.focus(); return; }
+  localStorage.setItem("castomatic_last_room",room);
+  localStorage.setItem("castomatic_last_receiver",location.origin+"/receiver?room="+encodeURIComponent(room));
+  location.href="/receiver?room="+encodeURIComponent(room);
+}
+
+document.getElementById("joinBtn").onclick=()=>connectRoom(roomInput.value);
+roomInput.addEventListener("keydown",e=>{if(e.key==="Enter")connectRoom(roomInput.value)});
+
+const lastRoom=localStorage.getItem("castomatic_last_room");
+if(lastRoom){recentBtn.style.display="inline-flex";recentBtn.textContent="Reconnect to "+lastRoom;recentBtn.onclick=()=>connectRoom(lastRoom)}
+
+function closeScanner(){
+  if(scanner){scanner.stop().catch(()=>{});scanner.clear().catch(()=>{});scanner=null}
+  document.getElementById("scanner").classList.remove("open");
+}
+document.getElementById("closeScanner").onclick=closeScanner;
+
+document.getElementById("scanBtn").onclick=async()=>{
+  const modal=document.getElementById("scanner");
+  const status=document.getElementById("scanStatus");
+  modal.classList.add("open");
+  status.textContent="Starting camera...";
+  if(typeof Html5Qrcode==="undefined"){
+    status.textContent="QR scanner library is unavailable. Enter the room code manually.";
+    return;
+  }
+  scanner=new Html5Qrcode("reader");
+  try{
+    const cameras=await Html5Qrcode.getCameras();
+    if(!cameras.length)throw new Error("No camera found");
+    const preferred=cameras.find(c=>/back|rear|environment/i.test(c.label))||cameras[0];
+    await scanner.start(preferred.id,{fps:10,qrbox:{width:250,height:250}},decoded=>{
+      try{
+        const url=new URL(decoded);
+        if(url.pathname==="/receiver" && url.searchParams.get("room")){
+          const room=url.searchParams.get("room").toUpperCase();
+          closeScanner(); connectRoom(room); return;
+        }
+      }catch(e){}
+      const match=String(decoded).match(/(?:room=)?([A-Z0-9]{4,20})$/i);
+      if(match){closeScanner();connectRoom(match[1])}
+    },()=>{});
+    status.textContent="Camera active. Point it at the session QR code.";
+  }catch(e){
+    status.textContent="Camera could not be started. Use the room code field below.";
+  }
+};
+
+if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(()=>{})}
 </script>
 </body>
 </html>

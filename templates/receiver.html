@@ -1,42 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#000"><link rel="manifest" href="/manifest.json">
-<title>Cast-O-Matic • Display</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#000">
+<link rel="manifest" href="/manifest.json">
+<title>Cast-O-Matic | Display</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family:Inter,Arial,sans-serif}body{display:flex;flex-direction:column;overflow:hidden}
-header{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#090d16;border-bottom:1px solid #1f2937;flex-shrink:0}.brand{font-weight:800}.room{font-size:13px;color:#94a3b8}
-#screen{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#000;position:relative}iframe,video{width:100%;height:100%;border:0;object-fit:contain;background:#000}#placeholder{text-align:center;color:#94a3b8;padding:25px}#placeholder h1{color:#fff;font-size:clamp(24px,5vw,48px)}#placeholder p{font-size:clamp(14px,2vw,20px)}
-#enter{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);padding:10px 14px;border:1px solid #334155;background:#111827;color:#fff;border-radius:10px;display:none;z-index:5}.file-info{position:absolute;top:12px;left:12px;right:12px;z-index:4;display:none;background:rgba(15,23,42,.86);backdrop-filter:blur(8px);border:1px solid #334155;border-radius:10px;padding:9px 12px;font-size:13px}.file-info b{color:#fff}.download{color:#93c5fd;text-decoration:none;margin-left:8px}
-@media(max-width:600px){header{height:44px;padding:0 10px}}
-</style></head>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}body{display:flex;flex-direction:column;overflow:hidden}
+header{height:54px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px;background:#090d16;border-bottom:1px solid #202b3c;flex-shrink:0}.brand{font-weight:800}.room{font-size:13px;color:#9aa9bf}
+#screen{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#000;position:relative}.content{width:100%;height:100%;display:flex;align-items:center;justify-content:center}.content iframe,.content video{width:100%;height:100%;border:0;object-fit:contain;background:#000}.content img{max-width:100%;max-height:100%;object-fit:contain}.content audio{max-width:80%}.content pre{max-width:90%;max-height:90%;overflow:auto;background:#101827;padding:22px;border-radius:12px;white-space:pre-wrap}
+#placeholder{text-align:center;color:#91a0b5;padding:28px}.placeholder-title{font-size:clamp(28px,5vw,56px);font-weight:800;color:#fff;margin-bottom:10px}.placeholder-sub{font-size:clamp(14px,2vw,19px)}
+.toolbar{position:absolute;top:12px;right:12px;display:flex;gap:8px;z-index:10}.tool{border:1px solid #344258;background:rgba(10,15,25,.88);color:#fff;border-radius:9px;padding:9px 11px;cursor:pointer}.file-info{position:absolute;top:12px;left:12px;max-width:60%;z-index:8;display:none;background:rgba(12,19,32,.88);border:1px solid #334155;border-radius:9px;padding:8px 11px;font-size:13px}.file-info b{color:#fff}.download{color:#9ec5ff;text-decoration:none;margin-left:8px}
+#enter{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);padding:10px 14px;border:1px solid #334155;background:#111827;color:#fff;border-radius:10px;display:none;z-index:10}
+@media(max-width:600px){header{height:44px;padding:0 10px}.file-info{max-width:75%}}
+</style>
+</head>
 <body>
-<header><div class="brand">📺 Cast-O-Matic Display</div><div class="room">Room: <b id="room">{{ room or "—" }}</b></div></header>
-<div id="screen"><div id="placeholder"><h1>Ready to receive</h1><p>Waiting for the presenter to send a file or start a live cast.</p></div><div id="fileInfo" class="file-info"></div><iframe id="pdf" style="display:none" title="Presentation"></iframe><iframe id="office" style="display:none" title="Office document"></iframe><img id="image" style="display:none;max-width:100%;max-height:100%;object-fit:contain" alt="Shared image"><video id="video" autoplay playsinline controls style="display:none"></video><audio id="audio" controls style="display:none;max-width:90%"></audio><pre id="text" style="display:none;white-space:pre-wrap;max-width:90%;max-height:90%;overflow:auto;background:#111827;padding:20px;border-radius:12px"></pre><button id="enter">Tap to start display</button></div>
+<header><div class="brand">Cast-O-Matic Display</div><div class="room">Room: <b>{{ room or "—" }}</b></div></header>
+<div id="screen">
+  <div id="placeholder"><div class="placeholder-title">Ready to Receive</div><div class="placeholder-sub">Waiting for the presenter to send content.</div></div>
+  <div class="content">
+    <iframe id="pdf" style="display:none" title="PDF presentation"></iframe>
+    <iframe id="office" style="display:none" title="Office document"></iframe>
+    <img id="image" style="display:none" alt="Shared image">
+    <video id="video" autoplay playsinline controls style="display:none"></video>
+    <audio id="audio" controls style="display:none"></audio>
+    <pre id="text" style="display:none"></pre>
+  </div>
+  <div id="fileInfo" class="file-info"></div>
+  <div class="toolbar"><button class="tool" id="fullscreen" type="button">Full Screen</button><button class="tool" id="reconnect" type="button">Reconnect</button></div>
+  <button id="enter" type="button">Start Display</button>
+</div>
 <script>
-const ROOM={{ room|tojson }};const socket=io();let pc=null,pending=[];const rtcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
-const placeholder=document.getElementById("placeholder"),pdf=document.getElementById("pdf"),office=document.getElementById("office"),image=document.getElementById("image"),video=document.getElementById("video"),audio=document.getElementById("audio"),text=document.getElementById("text"),enter=document.getElementById("enter"),fileInfo=document.getElementById("fileInfo");
-function hideAll(){[pdf,office,image,video,audio,text].forEach(x=>x.style.display="none");enter.style.display="none";fileInfo.style.display="none"}
-function baseShow(name){hideAll();placeholder.style.display="none";fileInfo.style.display="block";fileInfo.innerHTML='<b>'+escapeHtml(name)+'</b>'}
+const ROOM={{ room|tojson }};
+const socket=io();
+const rtcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+let pc=null,pending=[],senderId=null;
+const placeholder=document.getElementById("placeholder");
+const pdf=document.getElementById("pdf"),office=document.getElementById("office"),image=document.getElementById("image"),video=document.getElementById("video"),audio=document.getElementById("audio"),text=document.getElementById("text"),enter=document.getElementById("enter"),fileInfo=document.getElementById("fileInfo");
+
+function escapeHtml(v){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function hideContent(){[pdf,office,image,video,audio,text].forEach(x=>x.style.display="none");fileInfo.style.display="none";enter.style.display="none"}
+function baseShow(name){hideContent();placeholder.style.display="none";fileInfo.style.display="block";fileInfo.innerHTML="<b>"+escapeHtml(name)+"</b>"}
 function fileUrl(f){return "/uploads/"+encodeURIComponent(f)}
-function showFile(d){if(!d||!d.filename)return;const url=fileUrl(d.filename);const kind=d.kind;
- if(kind==="pdf"){baseShow(d.original_name);pdf.src=url;pdf.style.display="block";return}
- if(kind==="office"){baseShow(d.original_name);const viewer="https://view.officeapps.live.com/op/view.aspx?src="+encodeURIComponent(location.origin+url);office.src=viewer;office.style.display="block";fileInfo.innerHTML='<b>'+escapeHtml(d.original_name)+'</b><a class="download" href="'+url+'" target="_blank">Open/download</a>';return}
- if(kind==="image"){baseShow(d.original_name);image.src=url;image.style.display="block";return}
- if(kind==="video"){baseShow(d.original_name);video.src=url;video.style.display="block";video.play().catch(()=>{enter.style.display="block"});return}
- if(kind==="audio"){baseShow(d.original_name);audio.src=url;audio.style.display="block";audio.play().catch(()=>{enter.style.display="block"});return}
- if(kind==="text"){baseShow(d.original_name);fetch(url).then(r=>r.text()).then(v=>{text.textContent=v;text.style.display="block"}).catch(()=>{});return}
- baseShow(d.original_name);fileInfo.innerHTML='<b>'+escapeHtml(d.original_name)+'</b><a class="download" href="'+url+'" target="_blank">Download / open</a>'}
-function showVideoStream(){hideAll();placeholder.style.display="none";video.style.display="block";video.controls=false;video.muted=true}
-function escapeHtml(v){return String(v).replace(/[&<>\"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[m]))}
-async function flush(){for(const c of pending){try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch(e){}}pending=[]}
-if(!ROOM){placeholder.innerHTML="<h1>Join a room</h1><p>Use the presenter’s room code or link.</p>";}else{
-socket.on("connect",()=>socket.emit("join",{room:ROOM,role:"receiver"}));
+function showFile(d){
+  if(!d?.filename)return;
+  const url=fileUrl(d.filename);
+  baseShow(d.original_name);
+  if(d.kind==="pdf"){pdf.src=url;pdf.style.display="block";return}
+  if(d.kind==="office"){
+    const viewer="https://view.officeapps.live.com/op/view.aspx?src="+encodeURIComponent(location.origin+url);
+    office.src=viewer;office.style.display="block";
+    fileInfo.innerHTML="<b>"+escapeHtml(d.original_name)+"</b><a class='download' href='"+url+"' target='_blank' rel='noopener'>Open / Download</a>";
+    return;
+  }
+  if(d.kind==="image"){image.src=url;image.style.display="block";return}
+  if(d.kind==="video"){video.src=url;video.controls=true;video.style.display="block";video.play().catch(()=>enter.style.display="block");return}
+  if(d.kind==="audio"){audio.src=url;audio.style.display="block";audio.play().catch(()=>enter.style.display="block");return}
+  if(d.kind==="text"){fetch(url).then(r=>{if(!r.ok)throw new Error("Could not load text");return r.text()}).then(v=>{text.textContent=v;text.style.display="block"}).catch(()=>{fileInfo.innerHTML+="<span> Could not preview this file.</span>"});return}
+  fileInfo.innerHTML="<b>"+escapeHtml(d.original_name)+"</b><a class='download' href='"+url+"' target='_blank' rel='noopener'>Download / Open</a>";
+}
+function showLiveStream(){
+  hideContent();placeholder.style.display="none";video.style.display="block";video.controls=false;video.muted=false;
+}
+async function flush(){
+  for(const c of pending){try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch(e){}}
+  pending=[];
+}
+async function connectWebRTC(offer,id){
+  senderId=id||senderId;
+  if(pc){try{pc.close()}catch(e){}}
+  pending=[];
+  pc=new RTCPeerConnection(rtcConfig);
+  pc.ontrack=e=>{
+    video.srcObject=e.streams[0]||new MediaStream([e.track]);
+    showLiveStream();
+    video.play().catch(()=>{enter.style.display="block"});
+  };
+  pc.onicecandidate=e=>{
+    if(e.candidate)socket.emit("ice-candidate",{room:ROOM,target:senderId,candidate:e.candidate.toJSON()});
+  };
+  pc.onconnectionstatechange=()=>{
+    if(!pc)return;
+    if(pc.connectionState==="connected")document.title="Live | Cast-O-Matic";
+    if(["failed","disconnected","closed"].includes(pc.connectionState)){
+      document.title="Cast-O-Matic | Display";
+      placeholder.style.display="block";
+      placeholder.querySelector(".placeholder-sub").textContent="Connection ended. Reconnect or wait for the presenter.";
+    }
+  };
+  await pc.setRemoteDescription(new RTCSessionDescription(offer));
+  await flush();
+  const answer=await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  socket.emit("answer",{room:ROOM,target:senderId,answer:pc.localDescription});
+}
+socket.on("connect",()=>{if(ROOM)socket.emit("join",{room:ROOM,role:"receiver"})});
+socket.on("join_error",d=>{placeholder.style.display="block";placeholder.querySelector(".placeholder-sub").textContent=d?.message||"Could not join this room."});
+socket.on("sender_ready",()=>{placeholder.querySelector(".placeholder-sub").textContent="Presenter connected. Waiting for content.";});
 socket.on("presentation_update",showFile);
-socket.on("offer",async offer=>{try{if(pc)pc.close();pending=[];pc=new RTCPeerConnection(rtcConfig);pc.ontrack=e=>{video.srcObject=e.streams[0]||new MediaStream([e.track]);showVideoStream();video.play().catch(()=>{enter.style.display="block"})};pc.onicecandidate=e=>{if(e.candidate)socket.emit("ice-candidate",{room:ROOM,candidate:e.candidate.toJSON()})};pc.onconnectionstatechange=()=>{if(pc&&["failed","disconnected","closed"].includes(pc.connectionState)){placeholder.style.display="block";placeholder.querySelector("p").textContent="Connection ended. Ask the presenter to start the cast again."}};await pc.setRemoteDescription(new RTCSessionDescription(offer));await flush();const answer=await pc.createAnswer();await pc.setLocalDescription(answer);socket.emit("answer",{room:ROOM,answer:pc.localDescription})}catch(e){placeholder.style.display="block";placeholder.querySelector("p").textContent="Could not connect: "+e.message}});
-socket.on("ice-candidate",async d=>{const c=d&&d.candidate;if(!c)return;if(!pc||!pc.remoteDescription){pending.push(c);return}try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch(e){console.error(e)}});
-enter.onclick=()=>{if(video.style.display!=="none")video.play().then(()=>enter.style.display="none").catch(()=>{});if(audio.style.display!=="none")audio.play().then(()=>enter.style.display="none").catch(()=>{})};}
+socket.on("offer",d=>connectWebRTC(d.offer,d.sender_id).catch(e=>{console.error(e);placeholder.style.display="block";placeholder.querySelector(".placeholder-sub").textContent="Could not connect to the live cast."}));
+socket.on("ice-candidate",async d=>{
+  if(!d?.candidate)return;
+  if(d.peer_id && senderId && d.peer_id!==senderId)return;
+  if(!pc||!pc.remoteDescription)pending.push(d.candidate);
+  else{try{await pc.addIceCandidate(new RTCIceCandidate(d.candidate))}catch(e){}}
+});
+socket.on("peer_left",d=>{
+  if(d?.peer_id===senderId){try{pc?.close()}catch(e){}pc=null;senderId=null;hideContent();placeholder.style.display="block";placeholder.querySelector(".placeholder-sub").textContent="Presenter disconnected. Waiting for a new connection."}
+});
+enter.onclick=()=>{video.play().then(()=>enter.style.display="none").catch(()=>{});audio.play().then(()=>enter.style.display="none").catch(()=>{})};
+document.getElementById("fullscreen").onclick=async()=>{
+  try{
+    if(!document.fullscreenElement)await document.documentElement.requestFullscreen();
+    else await document.exitFullscreen();
+  }catch(e){}
+};
+document.getElementById("reconnect").onclick=()=>{
+  try{pc?.close()}catch(e){}pc=null;senderId=null;pending=[];
+  hideContent();placeholder.style.display="block";placeholder.querySelector(".placeholder-sub").textContent="Reconnecting...";
+  if(socket.connected)socket.emit("join",{room:ROOM,role:"receiver"});
+};
+if(!ROOM){placeholder.querySelector(".placeholder-title").textContent="Room Required";placeholder.querySelector(".placeholder-sub").textContent="Open this page using the presenter receiver link or room code."}
 if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
-</script></body></html>
+</script>
+</body>
+</html>
