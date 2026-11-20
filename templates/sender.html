@@ -6,11 +6,12 @@
 <meta name="theme-color" content="#0b1020">
 <link rel="manifest" href="/manifest.json">
 <title>Cast-O-Matic | Presenter</title>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#070b14;color:#f5f7fb;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}.wrap{max-width:1080px;margin:auto;padding:22px 16px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:14px}.brand{font-size:22px;font-weight:800}.room{background:#111d32;border:1px solid #354663;padding:9px 13px;border-radius:10px;font-weight:800;letter-spacing:2px}.mode{font-size:12px;color:#9fb2d0;border:1px solid #33445f;border-radius:999px;padding:7px 10px;margin-left:auto}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}.card{background:#0f182a;border:1px solid #273754;border-radius:18px;padding:24px}.card h2{margin:0 0 9px}.small{color:#9eacc2;font-size:13px;line-height:1.6}.btn{border:0;border-radius:10px;padding:12px 16px;background:#4f8cff;color:#fff;font-weight:750;cursor:pointer;font-size:14px}.btn.green{background:#0eaa78}.btn.red{background:#d94848}.btn.gray{background:#26344c}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}.status{margin-top:14px;padding:12px;border-radius:10px;background:#0a1220;border:1px solid #202f48;color:#b8c5d9;line-height:1.5;min-height:44px}.linkbox{display:flex;gap:8px;margin-top:10px}.linkbox input{flex:1;min-width:0;background:#09111f;color:#dce5f3;border:1px solid #33445f;border-radius:9px;padding:11px}.qr{width:190px;height:190px;background:#fff;padding:12px;border-radius:12px;margin-top:12px}.network{display:none;margin-top:14px;padding:13px;background:#0a1220;border:1px solid #2c3d59;border-radius:11px}.network b{display:block;margin-bottom:5px}.count{font-size:13px;color:#9fb0c8;margin-top:10px}.warning{color:#f6c86b}.success{color:#72ddb7}.error{color:#ff8d8d}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}.card{background:#0f182a;border:1px solid #273754;border-radius:18px;padding:24px}.card h2{margin:0 0 9px}.small{color:#9eacc2;font-size:13px;line-height:1.6}.btn{border:0;border-radius:10px;padding:12px 16px;background:#4f8cff;color:#fff;font-weight:750;cursor:pointer;font-size:14px}.btn.green{background:#0eaa78}.btn.red{background:#d94848}.btn.gray{background:#26344c}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}.status{margin-top:14px;padding:12px;border-radius:10px;background:#0a1220;border:1px solid #202f48;color:#b8c5d9;line-height:1.5;min-height:44px}.linkbox{display:flex;gap:8px;margin-top:10px}.linkbox input{flex:1;min-width:0;background:#09111f;color:#dce5f3;border:1px solid #33445f;border-radius:9px;padding:11px}.qr{width:190px;height:190px;background:#fff;padding:12px;border-radius:12px;margin-top:12px}.network{display:none;margin-top:14px;padding:13px;background:#0a1220;border:1px solid #2c3d59;border-radius:11px}.network b{display:block;margin-bottom:5px}.count{font-size:13px;color:#9fb0c8;margin-top:10px}.progress{height:7px;background:#111d32;border-radius:99px;overflow:hidden;margin-top:10px}.progress i{display:block;height:100%;width:0;background:#4f8cff}.warning{color:#f6c86b}.success{color:#72ddb7}.error{color:#ff8d8d}
 @media(max-width:760px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-wrap:wrap}.mode{margin-left:0}.room{margin-left:auto}}
 </style>
 </head>
@@ -31,6 +32,21 @@
         <div class="actions"><button class="btn" type="submit">Upload and Cast</button></div>
       </form>
       <div id="uploadStatus" class="status">Ready for a file.</div>
+    </section>
+
+    <section class="card">
+      <h2>Session Security</h2>
+      <p class="small">Optional protection against accidental or unauthorized joining. A receiver must enter this PIN before it can receive content or live casting.</p>
+      <div class="linkbox"><input id="sessionPin" inputmode="numeric" maxlength="8" placeholder="4–8 digit PIN"><button id="setPin" class="btn gray" type="button">Set PIN</button></div>
+      <div id="securityStatus" class="status">Session is open. No PIN is required.</div>
+    </section>
+
+    <section class="card">
+      <h2>Nearby Direct Share</h2>
+      <p class="small">Send a selected file directly from this presenter to connected receivers using a peer-to-peer data channel. The file does not need to be stored on the server.</p>
+      <input id="directFile" type="file" accept="*/*" style="width:100%;padding:13px;border:1px dashed #465a7b;border-radius:11px;background:#09111f;color:#cbd5e1">
+      <div class="actions"><button id="directSend" class="btn" type="button">Send Directly</button></div>
+      <div id="directStatus" class="status">Connect a receiver to enable direct sharing.</div>
     </section>
 
     <section class="card">
@@ -74,18 +90,28 @@ const rtcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
 const peers=new Map();
 let localStream=null;
 let receiverReadyCount=0;
+const sessionPin=document.getElementById("sessionPin");
+const setPin=document.getElementById("setPin");
+const securityStatus=document.getElementById("securityStatus");
+const directFile=document.getElementById("directFile");
+const directSend=document.getElementById("directSend");
+const directStatus=document.getElementById("directStatus");
 
 const start=document.getElementById("start");
 const stop=document.getElementById("stop");
 const statusEl=document.getElementById("streamStatus");
 const receiverCountEl=document.getElementById("receiverCount");
 const receiverLink=document.getElementById("receiverLink");
-const receiverUrl=location.origin+"/receiver?room="+encodeURIComponent(ROOM);
-receiverLink.value=receiverUrl;
-
+let receiverUrl=location.origin+"/receiver?room="+encodeURIComponent(ROOM);
+function renderReceiverQr(url){
+  receiverUrl=url;
+  receiverLink.value=url;
+  const box=document.getElementById("qrcode");
+  box.innerHTML="";
+  new QRCode(box,{text:url,width:164,height:164,correctLevel:QRCode.CorrectLevel.M});
+}
+renderReceiverQr(receiverUrl);
 document.getElementById("modeLabel").textContent=MODE==="offline"?"Offline LAN Session":"Online Session";
-
-new QRCode(document.getElementById("qrcode"),{text:receiverUrl,width:164,height:164,correctLevel:QRCode.CorrectLevel.M});
 
 function escapeHtml(v){
   return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -116,7 +142,12 @@ function attachStream(item,stream){
 async function createPeer(receiverId){
   if(peers.has(receiverId))return;
   const pc=new RTCPeerConnection(rtcConfig);
-  const item={pc,pending:[]};
+  const item={pc,pending:[],channel:null};
+  const channel=pc.createDataChannel("file-transfer",{ordered:true});
+  item.channel=channel;
+  channel.onopen=()=>{directStatus.textContent="Direct sharing ready for connected receiver(s)."};
+  channel.onclose=()=>{if(peers.size)directStatus.textContent="Direct sharing channel closed for one receiver."};
+  channel.onerror=()=>{directStatus.textContent="Direct sharing is unavailable for one receiver. Use Upload and Cast instead."};
   peers.set(receiverId,item);
   updateCount();
 
@@ -135,14 +166,14 @@ async function createPeer(receiverId){
     if(state==="disconnected")statusEl.textContent="Receiver connection interrupted. Reconnecting...";
   };
 
-  if(localStream){
-    const offer=await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    socket.emit("offer",{room:ROOM,target:receiverId,offer:pc.localDescription});
-  }
+  const offer=await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  socket.emit("offer",{room:ROOM,target:receiverId,offer:pc.localDescription});
 }
 socket.on("connect",()=>socket.emit("join",{room:ROOM,role:"sender"}));
 socket.on("join_error",d=>{statusEl.innerHTML='<span class="error">'+escapeHtml(d?.message||"Could not join the room.")+"</span>"});
+socket.on("security_status",d=>{securityStatus.textContent=d?.message||"Security updated.";securityStatus.className="status "+(d?.protected?"success":"")});
+socket.on("security_error",d=>{securityStatus.textContent=d?.message||"Could not update the PIN.";securityStatus.className="status error"});
 socket.on("receiver_ready",async d=>{
   receiverReadyCount++;
   await createPeer(d.receiver_id);
@@ -166,6 +197,12 @@ socket.on("peer_left",d=>{
   if(!peers.size && !localStream)statusEl.textContent="Waiting for a receiver.";
 });
 
+setPin.onclick=()=>{
+  const pin=sessionPin.value.trim();
+  if(pin && !/^\d{4,8}$/.test(pin)){securityStatus.textContent="Use a 4 to 8 digit PIN.";return}
+  socket.emit("set_pin",{room:ROOM,pin});
+  sessionPin.value="";
+};
 document.getElementById("uploadForm").onsubmit=async e=>{
   e.preventDefault();
   const f=document.getElementById("file").files[0];
@@ -180,6 +217,37 @@ document.getElementById("uploadForm").onsubmit=async e=>{
     out.innerHTML='<span class="success">Uploaded: <b>'+escapeHtml(d.original_name)+"</b>. Receiver updated.</span>";
   }catch(err){out.innerHTML='<span class="error">Upload failed: '+escapeHtml(err.message)+"</span>"}
 };
+
+async function sendDirectFile(){
+  const file=directFile.files[0];
+  if(!file){directStatus.textContent="Select a file first.";return}
+  const ready=[...peers.values()].filter(x=>x.channel&&x.channel.readyState==="open");
+  if(!ready.length){directStatus.textContent="No receiver is ready for direct sharing.";return}
+  if(file.size>100*1024*1024){directStatus.textContent="For direct sharing, use files up to 100 MB. Larger files should use Upload and Cast.";return}
+  directSend.disabled=true;
+  const meta={type:"file-start",name:file.name,size:file.size,mime:file.type||"application/octet-stream"};
+  let sent=0;
+  const chunkSize=64*1024;
+  try{
+    for(const item of ready)item.channel.send(JSON.stringify(meta));
+    while(sent<file.size){
+      const chunk=await file.slice(sent,Math.min(sent+chunkSize,file.size)).arrayBuffer();
+      for(const item of ready){
+        while(item.channel.bufferedAmount>4*1024*1024)await new Promise(r=>setTimeout(r,15));
+        item.channel.send(chunk);
+      }
+      sent+=chunk.byteLength;
+      directStatus.innerHTML="Sending directly: "+Math.round(sent/file.size*100)+"%";
+      await new Promise(requestAnimationFrame);
+    }
+    for(const item of ready)item.channel.send(JSON.stringify({type:"file-end"}));
+    directStatus.textContent="Sent directly to "+ready.length+" receiver"+(ready.length===1?"":"s")+" without server upload.";
+  }catch(e){
+    console.error(e);
+    directStatus.textContent="Direct sharing failed. Try Upload and Cast.";
+  }finally{directSend.disabled=false}
+}
+directSend.onclick=sendDirectFile;
 
 start.onclick=async()=>{
   if(!peers.size){
@@ -230,6 +298,7 @@ async function loadNetworkInfo(){
   try{
     const r=await fetch("/network-info");const d=await r.json();
     const localUrl="http://"+d.local_ip+":"+d.port+"/receiver?room="+encodeURIComponent(ROOM);
+    renderReceiverQr(localUrl);
     box.style.display="block";
     box.innerHTML="<b>Local receiver URL</b><div style='word-break:break-all'>"+escapeHtml(localUrl)+"</div>";
     status.innerHTML='<span class="success">Connect every device to the same Wi-Fi and open the local receiver URL.</span>';

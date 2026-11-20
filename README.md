@@ -11,7 +11,8 @@ The application is designed for classroom and demonstration use. It does not req
 - Online presentation mode
 - Offline LAN mode over the same Wi-Fi network
 - Automatic room-code generation
-- QR code session joining
+- QR code session joining with camera fallback to room code
+- Bottom-center quick QR scan control on mobile
 - Built-in QR scanner on the home page
 - Recent-session reconnect
 - File casting up to 50 MB
@@ -20,6 +21,8 @@ The application is designed for classroom and demonstration use. It does not req
 - Images, video, audio and text preview
 - Download/open fallback for unsupported file types
 - Live screen casting with WebRTC
+- Direct peer-to-peer file transfer over WebRTC DataChannel
+- Optional 4–8 digit session PIN protection
 - Multiple receivers in the same room
 - Responsive receiver for phones, tablets and large displays
 - Receiver full-screen mode
@@ -95,11 +98,14 @@ The presenter displays one QR code for the current room.
 
 The receiver can:
 
-- Scan the QR code using the built-in scanner.
-- Enter the room code manually.
+- Tap the bottom-center Scan control.
+- Scan the QR code using the rear camera.
+- Enter the room code manually if camera permission is denied or unavailable.
 - Reconnect to the most recently used room.
 
-The QR code opens the receiver URL for that specific room.
+The scanner uses the `html5-qrcode` browser library. Camera access requires a secure context (HTTPS) on normal mobile browsers. Therefore, a fresh HTTP LAN page such as `http://192.168.x.x:5080` may not be allowed to use the camera. The manual room-code path remains available for offline LAN mode.
+
+For the fastest offline setup, open the local receiver URL directly or use a QR scanner already available on the device.
 
 ## File casting
 
@@ -118,6 +124,18 @@ The receiver handles:
 - Other files through an open/download fallback
 
 Office preview uses Microsoft's public Office viewer, so that preview path requires Internet access. For an offline classroom, use live screen casting for Office content.
+
+## Direct peer-to-peer sharing
+
+When a receiver is connected, **Nearby Direct Share** can send a selected file over a WebRTC DataChannel. The file is transferred directly between the presenter and receiver instead of being saved by the Flask upload route.
+
+This is the closest browser-based equivalent to a Quick Share / ShareMe style direct transfer while keeping the project web-based. It works on supported modern browsers and can operate over the same local network without Internet access. For very large files, the normal Upload and Cast path is still available.
+
+## Session security
+
+The presenter can enable a 4–8 digit room PIN. A receiver must verify the PIN before it becomes an active presentation peer. This prevents an unknown device that knows the room URL from receiving content.
+
+Fingerprint/Face unlock is **not claimed as a universal browser feature**. A future native/PWA security layer can use WebAuthn/passkeys where the device and browser support platform biometrics.
 
 ## Live screen casting
 
@@ -226,6 +244,28 @@ cast-o-matic/
     ├── test_guard.py
     └── test_app.py
 ```
+
+## Performance notes
+
+The application is designed to keep the first screen small and cache the home shell through the service worker after the first successful visit. Direct peer-to-peer sharing avoids an upload/download round trip for connected receivers.
+
+A public Render instance can still have platform-level cold-start latency when the service has been idle. Application code cannot completely remove that infrastructure delay. Keeping the service warm or using a non-sleeping deployment tier is required for consistently instant first-open performance.
+
+For lower transfer latency on the same Wi-Fi network, use **Offline LAN + Nearby Direct Share**.
+
+## Product differentiation
+
+Cast-O-Matic is not positioned as another generic screen-mirroring app. Its differentiators are:
+
+- One browser-based room for presentation, file casting and display.
+- Direct peer-to-peer file transfer for connected receivers.
+- Offline LAN operation without requiring an Internet connection to the app server.
+- QR-first joining with a manual fallback.
+- Optional room PIN protection.
+- Multiple simultaneous receivers.
+- Browser-based receiver mode for compatible large displays.
+
+A future native companion can add true device-to-device discovery, platform biometrics and NFC-based pairing. Browser APIs do not provide a universal "touch two phones together and transfer arbitrary files" capability across Android and iOS.
 
 ## Important production notes
 

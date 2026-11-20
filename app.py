@@ -3,6 +3,7 @@ import secrets
 import string
 import mimetypes
 import socket
+import hashlib
 
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room
@@ -73,7 +74,23 @@ def get_local_ip():
 
 
 def room_state(room):
-    return rooms.setdefault(room, {"sender": None, "receivers": set()})
+    return rooms.setdefault(
+        room,
+        {
+            "sender": None,
+            "receivers": set(),
+            "verified": set(),
+            "pin_hash": None,
+        },
+    )
+
+
+def hash_pin(pin):
+    return hashlib.sha256(pin.encode("utf-8")).hexdigest()
+
+
+def receiver_is_verified(state, sid):
+    return sid in state.get("verified", set())
 
 
 def remove_socket(sid):
@@ -91,8 +108,10 @@ def remove_socket(sid):
         for receiver_sid in list(state["receivers"]):
             socketio.emit("peer_left", {"peer_id": sid}, to=receiver_sid)
         state["receivers"].clear()
+        state["verified"].clear()
     elif role == "receiver":
         state["receivers"].discard(sid)
+        state["verified"].discard(sid)
         if state["sender"]:
             socketio.emit("peer_left", {"peer_id": sid}, to=state["sender"])
 
@@ -124,6 +143,11 @@ def receiver():
         room=room,
         presentation=current_presentations.get(room) if room else None,
     )
+
+
+@app.route("/healthz")
+def healthz():
+    return jsonify(status="ok"), 200
 
 
 @app.route("/network-info")
@@ -171,7 +195,10 @@ def upload_file():
             "kind": kind,
         }
         current_presentations[room] = presentation
-        socketio.emit("presentation_update", presentation, to=room)
+        state = rooms.get(room)
+        if state:
+            for receiver_sid in list(state["verified"]):
+                socketio.emit("presentation_update", presentation, to=receiver_sid)
         return jsonify(success=True, **presentation)
     except OSError:
         app.logger.exception("Upload failed")
@@ -228,11 +255,66 @@ def on_join(data):
             emit("sender_ready", {"room": room}, to=receiver_sid)
     else:
         state["receivers"].add(request.sid)
-        if state["sender"]:
-            emit("receiver_ready", {"room": room, "receiver_id": request.sid}, to=state["sender"])
-            emit("sender_ready", {"room": room}, to=request.sid)
-        if current_presentations.get(room):
-            emit("presentation_update", current_presentations[room], to=request.sid)
+        if state["pin_hash"]:
+            emit("pin_required", {"room": room}, to=request.sid)
+        else:
+            state["verified"].add(request.sid)
+            if state["sender"]:
+                emit("receiver_ready", {"room": room, "receiver_id": request.sid}, to=state["sender"])
+                emit("sender_ready", {"room": room}, to=request.sid)
+            if current_presentations.get(room):
+                emit("presentation_update", current_presentations[room], to=request.sid)
+
+
+@socketio.on("set_pin")
+def set_room_pin(data):
+    data = data or {}
+    room = clean_room(data.get("room"))
+    pin = str(data.get("pin") or "").strip()
+    state = rooms.get(room or "")
+    if not room or not state or state.get("sender") != request.sid:
+        return
+    if pin and not pin.isdigit() or pin and not 4 <= len(pin) <= 8:
+        emit("security_error", {"message": "PIN must contain 4 to 8 digits."})
+        return
+    # Changing the PIN invalidates existing receiver peer sessions.
+    for receiver_sid in list(state["receivers"]):
+        socketio.emit("peer_left", {"peer_id": request.sid}, to=receiver_sid)
+        socketio.emit("peer_left", {"peer_id": receiver_sid}, to=request.sid)
+    state["pin_hash"] = hash_pin(pin) if pin else None
+    state["verified"].clear()
+    if state["pin_hash"]:
+        emit("security_status", {"protected": True, "message": "Session PIN enabled. Existing receivers must unlock again."})
+        for receiver_sid in list(state["receivers"]):
+            emit("pin_required", {"room": room}, to=receiver_sid)
+    else:
+        emit("security_status", {"protected": False, "message": "Session PIN disabled."})
+        for receiver_sid in list(state["receivers"]):
+            state["verified"].add(receiver_sid)
+            emit("receiver_ready", {"room": room, "receiver_id": receiver_sid}, to=request.sid)
+            emit("sender_ready", {"room": room}, to=receiver_sid)
+
+
+@socketio.on("verify_pin")
+def verify_room_pin(data):
+    data = data or {}
+    room = clean_room(data.get("room"))
+    pin = str(data.get("pin") or "").strip()
+    state = rooms.get(room or "")
+    if not room or not state or request.sid not in state.get("receivers", set()):
+        return
+    if not state.get("pin_hash"):
+        state["verified"].add(request.sid)
+    elif hash_pin(pin) != state["pin_hash"]:
+        emit("pin_error", {"message": "Incorrect PIN."})
+        return
+    else:
+        state["verified"].add(request.sid)
+    if state.get("sender"):
+        emit("receiver_ready", {"room": room, "receiver_id": request.sid}, to=state["sender"])
+        emit("sender_ready", {"room": room}, to=request.sid)
+    if current_presentations.get(room):
+        emit("presentation_update", current_presentations[room], to=request.sid)
 
 
 @socketio.on("offer")
@@ -244,7 +326,7 @@ def handle_offer(data):
     state = rooms.get(room or "")
     if not room or not target or not offer or not state or state.get("sender") != request.sid:
         return
-    if target not in state["receivers"]:
+    if target not in state["receivers"] or target not in state["verified"]:
         return
     emit("offer", {"offer": offer, "sender_id": request.sid}, to=target)
 
@@ -256,7 +338,7 @@ def handle_answer(data):
     target = data.get("target")
     answer = data.get("answer")
     state = rooms.get(room or "")
-    if not room or not target or not answer or not state or request.sid not in state["receivers"]:
+    if not room or not target or not answer or not state or request.sid not in state["receivers"] or request.sid not in state["verified"]:
         return
     if state.get("sender") != target:
         return
@@ -275,10 +357,10 @@ def handle_ice_candidate(data):
 
     role = sid_info.get(request.sid, (None, None))[1]
     if role == "sender":
-        if state.get("sender") != request.sid or target not in state["receivers"]:
+        if state.get("sender") != request.sid or target not in state["receivers"] or target not in state["verified"]:
             return
     elif role == "receiver":
-        if request.sid not in state["receivers"] or state.get("sender") != target:
+        if request.sid not in state["receivers"] or request.sid not in state["verified"] or state.get("sender") != target:
             return
     else:
         return

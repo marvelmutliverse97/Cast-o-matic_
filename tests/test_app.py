@@ -135,6 +135,34 @@ class TestCastOMaticApp(unittest.TestCase):
         sender.disconnect()
         receiver.disconnect()
 
+    def test_session_pin_protects_receiver(self):
+        room = "PIN123"
+        sender = app_module.socketio.test_client(app_module.app)
+        receiver = app_module.socketio.test_client(app_module.app)
+
+        sender.emit("join", {"room": room, "role": "sender"})
+        sender.get_received()
+
+        sender.emit("set_pin", {"room": room, "pin": "2468"})
+        sender.get_received()
+
+        receiver.emit("join", {"room": room, "role": "receiver"})
+        events = receiver.get_received()
+        self.assertTrue(any(e["name"] == "pin_required" for e in events))
+
+        receiver.emit("verify_pin", {"room": room, "pin": "0000"})
+        self.assertTrue(any(e["name"] == "pin_error" for e in receiver.get_received()))
+
+        receiver.emit("verify_pin", {"room": room, "pin": "2468"})
+        sender_events = sender.get_received()
+        receiver_events = receiver.get_received()
+
+        self.assertTrue(any(e["name"] == "receiver_ready" for e in sender_events))
+        self.assertTrue(any(e["name"] == "sender_ready" for e in receiver_events))
+
+        sender.disconnect()
+        receiver.disconnect()
+
     def test_multiple_receivers_receive_targeted_signaling(self):
         room = "ZXCV12"
 

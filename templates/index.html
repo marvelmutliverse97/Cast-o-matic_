@@ -2,79 +2,120 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="theme-color" content="#0b1020">
-<meta name="description" content="Cast-O-Matic wireless presentation and screen casting">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#070b14">
+<meta name="description" content="Cast-O-Matic: fast wireless presentation, direct peer-to-peer file sharing and screen casting">
 <link rel="manifest" href="/manifest.json">
-<title>Cast-O-Matic | Wireless Presentation</title>
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<title>Cast-O-Matic | Fast Wireless Sharing</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#070b14;color:#eef2f7}
-body{background:radial-gradient(circle at top,#14213b 0,#080d18 45%,#050810 100%)}
-.wrap{max-width:1080px;margin:auto;padding:24px 18px 48px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px}
-.brand{font-size:22px;font-weight:800;letter-spacing:.2px}.badge{font-size:12px;color:#aebbd0;border:1px solid #31405c;padding:7px 11px;border-radius:999px}
-.hero{text-align:center;padding:72px 8px 42px}.eyebrow{text-transform:uppercase;letter-spacing:2px;font-size:12px;color:#7ea9ff;font-weight:800}.hero h1{font-size:clamp(38px,7vw,72px);line-height:1;margin:14px 0}.hero p{max-width:720px;margin:auto;color:#aebbd0;font-size:17px;line-height:1.65}
-.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;max-width:900px;margin:0 auto}.card{background:rgba(14,23,41,.94);border:1px solid #273754;border-radius:18px;padding:26px;box-shadow:0 18px 50px rgba(0,0,0,.2)}.card h2{margin:0 0 8px}.card p{color:#aebbd0;line-height:1.55}.tag{display:inline-block;font-size:11px;color:#9db7e9;border:1px solid #334765;border-radius:999px;padding:5px 8px;margin-bottom:14px}
-.btn{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:46px;border:0;border-radius:11px;background:#4f8cff;color:#fff;text-decoration:none;font-weight:750;cursor:pointer;padding:12px 16px;font-size:15px}.btn.secondary{background:#202d45}.btn.outline{background:transparent;border:1px solid #3a4b69}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
-.join{max-width:900px;margin:18px auto 0}.joinrow{display:flex;gap:10px}.joinrow input{flex:1;min-width:0;height:46px;border:1px solid #354662;background:#080f1e;color:#fff;border-radius:11px;padding:0 14px;font-size:16px;text-transform:uppercase;letter-spacing:2px}.joinrow .btn{width:auto;min-width:120px}
-.features{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:28px auto 0;max-width:900px}.feature{padding:17px;border:1px solid #24334d;background:rgba(10,17,31,.72);border-radius:14px}.feature b{display:block;margin-bottom:5px}.feature span{font-size:12px;color:#91a0b7;line-height:1.45}
-.scanner{position:fixed;inset:0;background:rgba(2,5,11,.92);display:none;align-items:center;justify-content:center;padding:18px;z-index:100}.scanner.open{display:flex}.scanner-card{width:min(460px,100%);background:#0d1627;border:1px solid #33435f;border-radius:18px;padding:20px}.scanner-head{display:flex;justify-content:space-between;align-items:center}.scanner-head h3{margin:0}.close{background:#24324a;color:#fff;border:0;border-radius:9px;padding:8px 11px;cursor:pointer}.reader{width:100%;margin-top:15px;border-radius:12px;overflow:hidden;background:#000}.scan-status{color:#aebbd0;font-size:13px;line-height:1.5;margin:12px 0 0}.footer{text-align:center;color:#66758d;font-size:12px;margin-top:28px}
-@media(max-width:760px){.modes,.features{grid-template-columns:1fr 1fr}.hero{padding-top:50px}.actions{grid-template-columns:1fr}}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#060a12;color:#f4f7fb}
+body{background:radial-gradient(circle at 50% -10%,#172747 0,#080d18 43%,#05070c 100%)}
+.wrap{max-width:1080px;margin:auto;padding:18px 16px 96px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-size:21px;font-weight:850;letter-spacing:.2px}
+.badge{font-size:11px;color:#aebbd0;border:1px solid #31405c;padding:7px 10px;border-radius:999px}
+.hero{text-align:center;padding:54px 8px 30px}
+.eyebrow{text-transform:uppercase;letter-spacing:2px;font-size:11px;color:#7ea9ff;font-weight:850}
+.hero h1{font-size:clamp(38px,8vw,70px);line-height:1;margin:12px 0}
+.hero p{max-width:700px;margin:auto;color:#aebbd0;font-size:16px;line-height:1.6}
+.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:900px;margin:auto}
+.card{background:rgba(13,21,36,.94);border:1px solid #263754;border-radius:17px;padding:22px;box-shadow:0 16px 45px rgba(0,0,0,.18)}
+.card h2{margin:0 0 7px;font-size:20px}.card p{color:#aebbd0;line-height:1.55}
+.tag{display:inline-block;font-size:10px;color:#9db7e9;border:1px solid #334765;border-radius:999px;padding:5px 8px;margin-bottom:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;border:0;border-radius:11px;background:#4f8cff;color:#fff;text-decoration:none;font-weight:780;cursor:pointer;padding:12px 16px;font-size:14px}
+.btn.secondary{background:#202d45}.btn.outline{background:transparent;border:1px solid #3a4b69}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+.join{max-width:900px;margin:14px auto 0}.joinrow{display:flex;gap:9px}
+.joinrow input{flex:1;min-width:0;height:46px;border:1px solid #354662;background:#080f1e;color:#fff;border-radius:11px;padding:0 14px;font-size:16px;text-transform:uppercase;letter-spacing:2px}
+.joinrow .btn{width:auto;min-width:120px}
+.features{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px auto 0;max-width:900px}
+.feature{padding:16px;border:1px solid #24334d;background:rgba(10,17,31,.72);border-radius:14px}
+.feature b{display:block;margin-bottom:5px}.feature span{font-size:12px;color:#91a0b7;line-height:1.45}
+.footer{text-align:center;color:#66758d;font-size:12px;margin-top:22px}
+.scan-dock{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:90}
+.scan-fab{width:68px;height:68px;border-radius:50%;border:5px solid #060a12;background:#4f8cff;color:#fff;box-shadow:0 10px 35px rgba(0,0,0,.45);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.scan-fab svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:2}
+.scan-label{text-align:center;margin-top:5px;font-size:10px;color:#b8c5d9;background:#0b1220;border-radius:999px;padding:3px 8px}
+.scanner{position:fixed;inset:0;background:rgba(2,5,11,.96);display:none;align-items:center;justify-content:center;padding:16px;z-index:100}
+.scanner.open{display:flex}.scanner-card{width:min(460px,100%);background:#0d1627;border:1px solid #33435f;border-radius:18px;padding:18px}
+.scanner-head{display:flex;justify-content:space-between;align-items:center}.scanner-head h3{margin:0}
+.close{background:#24324a;color:#fff;border:0;border-radius:9px;padding:8px 11px;cursor:pointer}
+.reader{width:100%;min-height:280px;margin-top:14px;border-radius:12px;overflow:hidden;background:#000}
+.scan-status{color:#aebbd0;font-size:13px;line-height:1.5;margin:12px 0 0}
+.scan-fallback{display:none;margin-top:12px}.scan-fallback input{width:100%;height:44px;background:#080f1e;color:#fff;border:1px solid #354662;border-radius:10px;padding:0 12px;text-transform:uppercase}
+.scan-fallback .btn{width:100%;margin-top:8px}
+@media(max-width:760px){.modes,.features{grid-template-columns:1fr 1fr}.hero{padding-top:42px}.actions{grid-template-columns:1fr}}
 @media(max-width:520px){.modes,.features{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.joinrow{flex-direction:column}.joinrow .btn{width:100%}}
 </style>
 <script src="https://unpkg.com/html5-qrcode" defer></script>
 </head>
 <body>
 <div class="wrap">
-  <div class="top"><div class="brand">Cast-O-Matic</div><div class="badge">Wireless Presentation System</div></div>
+  <div class="top"><div class="brand">Cast-O-Matic</div><div class="badge">FAST WIRELESS SHARING</div></div>
+
   <section class="hero">
-    <div class="eyebrow">Present. Connect. Display.</div>
-    <h1>One room. Any screen.</h1>
-    <p>Share presentations, files, browser content or your live screen with phones, tablets, laptops and compatible smart-TV or network-display browsers.</p>
+    <div class="eyebrow">Present. Transfer. Display.</div>
+    <h1>One room. Every screen.</h1>
+    <p>Present files, share your screen and send files directly peer-to-peer. Built for classrooms, meetings and quick device-to-device sharing.</p>
   </section>
 
   <section class="modes">
     <article class="card">
       <span class="tag">ONLINE</span>
       <h2>Start a presentation</h2>
-      <p>Use the deployed Cast-O-Matic service when the presenter and receiver have Internet access.</p>
+      <p>Use the public Cast-O-Matic service when your devices have Internet access.</p>
       <a class="btn" href="/sender?mode=online">Create Online Session</a>
     </article>
     <article class="card">
       <span class="tag">LOCAL WI-FI</span>
       <h2>Offline LAN mode</h2>
-      <p>Run Cast-O-Matic on the presenter laptop and connect devices on the same Wi-Fi network. Internet access is not required for the application server.</p>
+      <p>Run the app on the presenter laptop. Devices communicate over the same Wi-Fi network without an Internet connection.</p>
       <a class="btn secondary" href="/sender?mode=offline">Create Offline Session</a>
     </article>
   </section>
 
-  <section class="card join" style="margin-top:18px">
+  <section class="card join">
     <span class="tag">RECEIVER</span>
     <h2>Connect to a presentation</h2>
-    <p>Scan the presenter's session QR code or enter the room code.</p>
-    <div class="actions">
-      <button class="btn" id="scanBtn" type="button">Scan QR Code</button>
-      <button class="btn outline" id="recentBtn" type="button" style="display:none">Reconnect to Recent Session</button>
-    </div>
-    <div class="joinrow" style="margin-top:12px">
+    <p>Scan the presenter's QR code or enter the room code. If camera access is unavailable, manual room entry is always available.</p>
+    <div class="joinrow">
       <input id="room" maxlength="20" placeholder="ROOM CODE" autocomplete="off" aria-label="Room code">
       <button class="btn" id="joinBtn" type="button">Connect</button>
+    </div>
+    <div class="actions">
+      <button class="btn outline" id="recentBtn" type="button" style="display:none">Reconnect</button>
+      <a class="btn outline" href="/receiver">Open Receiver</a>
     </div>
   </section>
 
   <section class="features">
-    <div class="feature"><b>Live Screen</b><span>Share a desktop, browser tab or application.</span></div>
-    <div class="feature"><b>File Casting</b><span>PDF, Office files, images, video, audio and text.</span></div>
-    <div class="feature"><b>Multi-Device</b><span>Receiver pages adapt to phones, tablets and large displays.</span></div>
-    <div class="feature"><b>Room Based</b><span>Each presentation uses a separate session code.</span></div>
+    <div class="feature"><b>Direct P2P Share</b><span>Send selected files directly to connected receivers without storing them on the server.</span></div>
+    <div class="feature"><b>Live Screen</b><span>Share a desktop, browser tab or application window.</span></div>
+    <div class="feature"><b>Offline LAN</b><span>Use the same local network without Internet access to the app server.</span></div>
+    <div class="feature"><b>Large Displays</b><span>Use the receiver in full-screen mode on compatible TV or projector browsers.</span></div>
   </section>
-  <div class="footer">Cast-O-Matic • Browser-based • WebRTC</div>
+
+  <div class="footer">Cast-O-Matic • WebRTC • Browser-based</div>
+</div>
+
+<div class="scan-dock">
+  <button class="scan-fab" id="scanBtn" type="button" aria-label="Scan QR code" title="Scan QR code">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>
+  </button>
+  <div class="scan-label">Scan</div>
 </div>
 
 <div class="scanner" id="scanner">
   <div class="scanner-card">
-    <div class="scanner-head"><h3>Scan Session QR Code</h3><button class="close" id="closeScanner" type="button">Close</button></div>
+    <div class="scanner-head"><h3>Scan Session QR</h3><button class="close" id="closeScanner" type="button">Close</button></div>
     <div id="reader" class="reader"></div>
-    <p class="scan-status" id="scanStatus">Allow camera access and point the camera at the presenter's QR code.</p>
+    <p class="scan-status" id="scanStatus">Starting the rear camera. If camera access is blocked, use the room code below.</p>
+    <div class="scan-fallback" id="scanFallback">
+      <input id="scanRoom" maxlength="20" placeholder="ROOM CODE" autocomplete="off">
+      <button class="btn" id="scanConnect" type="button">Connect with Room Code</button>
+    </div>
   </div>
 </div>
 
@@ -82,15 +123,16 @@ body{background:radial-gradient(circle at top,#14213b 0,#080d18 45%,#050810 100%
 const roomInput=document.getElementById("room");
 const recentBtn=document.getElementById("recentBtn");
 let scanner=null;
+let scannerStarting=false;
 
 function connectRoom(value){
   const room=String(value||"").trim().toUpperCase();
-  if(!room){ roomInput.focus(); return; }
+  if(!room){roomInput.focus();return}
+  if(!/^[A-Z0-9]{1,20}$/.test(room)){roomInput.focus();return}
   localStorage.setItem("castomatic_last_room",room);
   localStorage.setItem("castomatic_last_receiver",location.origin+"/receiver?room="+encodeURIComponent(room));
   location.href="/receiver?room="+encodeURIComponent(room);
 }
-
 document.getElementById("joinBtn").onclick=()=>connectRoom(roomInput.value);
 roomInput.addEventListener("keydown",e=>{if(e.key==="Enter")connectRoom(roomInput.value)});
 
@@ -98,43 +140,66 @@ const lastRoom=localStorage.getItem("castomatic_last_room");
 if(lastRoom){recentBtn.style.display="inline-flex";recentBtn.textContent="Reconnect to "+lastRoom;recentBtn.onclick=()=>connectRoom(lastRoom)}
 
 function closeScanner(){
-  if(scanner){scanner.stop().catch(()=>{});scanner.clear().catch(()=>{});scanner=null}
+  if(scanner){
+    scanner.stop().catch(()=>{}).finally(()=>{
+      scanner.clear().catch(()=>{});
+      scanner=null;
+      scannerStarting=false;
+    });
+  }
+  document.getElementById("reader").innerHTML="";
   document.getElementById("scanner").classList.remove("open");
 }
 document.getElementById("closeScanner").onclick=closeScanner;
 
-document.getElementById("scanBtn").onclick=async()=>{
-  const modal=document.getElementById("scanner");
-  const status=document.getElementById("scanStatus");
-  modal.classList.add("open");
-  status.textContent="Starting camera...";
-  if(typeof Html5Qrcode==="undefined"){
-    status.textContent="QR scanner library is unavailable. Enter the room code manually.";
-    return;
-  }
-  scanner=new Html5Qrcode("reader");
+function handleDecoded(decoded){
   try{
-    const cameras=await Html5Qrcode.getCameras();
-    if(!cameras.length)throw new Error("No camera found");
-    const preferred=cameras.find(c=>/back|rear|environment/i.test(c.label))||cameras[0];
-    await scanner.start(preferred.id,{fps:10,qrbox:{width:250,height:250}},decoded=>{
-      try{
-        const url=new URL(decoded);
-        if(url.pathname==="/receiver" && url.searchParams.get("room")){
-          const room=url.searchParams.get("room").toUpperCase();
-          closeScanner(); connectRoom(room); return;
-        }
-      }catch(e){}
-      const match=String(decoded).match(/(?:room=)?([A-Z0-9]{4,20})$/i);
-      if(match){closeScanner();connectRoom(match[1])}
-    },()=>{});
-    status.textContent="Camera active. Point it at the session QR code.";
-  }catch(e){
-    status.textContent="Camera could not be started. Use the room code field below.";
-  }
-};
+    const url=new URL(decoded);
+    const room=url.searchParams.get("room");
+    if(room&&(url.pathname==="/receiver"||url.pathname.endsWith("/receiver"))){
+      closeScanner();connectRoom(room);return true;
+    }
+  }catch(e){}
+  const match=String(decoded).match(/(?:^|[?&])room=([A-Z0-9]{1,20})/i)||String(decoded).match(/^([A-Z0-9]{4,20})$/i);
+  if(match){closeScanner();connectRoom(match[1]);return true}
+  return false;
+}
 
-if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(()=>{})}
+async function openScanner(){
+  if(scannerStarting||scanner)return;
+  scannerStarting=true;
+  const modal=document.getElementById("scanner"),status=document.getElementById("scanStatus"),fallback=document.getElementById("scanFallback");
+  modal.classList.add("open");fallback.style.display="block";
+  status.textContent="Starting camera...";
+  if(!window.isSecureContext&&!["localhost","127.0.0.1"].includes(location.hostname)){
+    status.textContent="Camera access requires HTTPS on this device. Use the room code below, or open the public HTTPS site.";
+    scannerStarting=false;return;
+  }
+  if(!navigator.mediaDevices?.getUserMedia){
+    status.textContent="This browser does not provide camera access. Use the room code below.";
+    scannerStarting=false;return;
+  }
+  if(typeof Html5Qrcode==="undefined"){
+    status.textContent="QR scanner is still loading. Wait a moment and tap Scan again, or use the room code below.";
+    scannerStarting=false;return;
+  }
+  try{
+    scanner=new Html5Qrcode("reader",{verbose:false});
+    await scanner.start({facingMode:"environment"},{fps:12,qrbox:{width:250,height:250},aspectRatio:1.0},handleDecoded,()=>{});
+    status.textContent="Camera active. Point the rear camera at the session QR code.";
+  }catch(error){
+    console.error(error);
+    const name=error?.name||"";
+    if(name==="NotAllowedError")status.textContent="Camera permission was denied. Allow camera access in browser settings, then try again.";
+    else if(name==="NotFoundError")status.textContent="No usable camera was found. Use the room code below.";
+    else if(name==="NotReadableError")status.textContent="The camera is busy in another app. Close that app and try again.";
+    else status.textContent="Camera could not be opened on this browser. Use the room code below.";
+    if(scanner){try{await scanner.clear()}catch(e){}scanner=null}
+  }finally{scannerStarting=false}
+}
+document.getElementById("scanBtn").onclick=openScanner;
+document.getElementById("scanConnect").onclick=()=>connectRoom(document.getElementById("scanRoom").value);
+if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
 </script>
 </body>
 </html>

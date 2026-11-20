@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#000">
 <link rel="manifest" href="/manifest.json">
 <title>Cast-O-Matic | Display</title>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}body{display:flex;flex-direction:column;overflow:hidden}
@@ -14,6 +15,7 @@ header{height:54px;display:flex;align-items:center;justify-content:space-between
 #placeholder{text-align:center;color:#91a0b5;padding:28px}.placeholder-title{font-size:clamp(28px,5vw,56px);font-weight:800;color:#fff;margin-bottom:10px}.placeholder-sub{font-size:clamp(14px,2vw,19px)}
 .toolbar{position:absolute;top:12px;right:12px;display:flex;gap:8px;z-index:10}.tool{border:1px solid #344258;background:rgba(10,15,25,.88);color:#fff;border-radius:9px;padding:9px 11px;cursor:pointer}.file-info{position:absolute;top:12px;left:12px;max-width:60%;z-index:8;display:none;background:rgba(12,19,32,.88);border:1px solid #334155;border-radius:9px;padding:8px 11px;font-size:13px}.file-info b{color:#fff}.download{color:#9ec5ff;text-decoration:none;margin-left:8px}
 #enter{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);padding:10px 14px;border:1px solid #334155;background:#111827;color:#fff;border-radius:10px;display:none;z-index:10}
+#pinGate{position:fixed;inset:0;background:rgba(2,5,11,.96);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}.pin-card{width:min(380px,100%);background:#0d1627;border:1px solid #33435f;border-radius:18px;padding:22px}.pin-card h2{margin-top:0}.pin-card p{color:#9eacc2;line-height:1.5}.pin-card input{width:100%;height:48px;background:#080f1e;color:#fff;border:1px solid #354662;border-radius:10px;padding:0 14px;font-size:20px;letter-spacing:6px;text-align:center}.pin-card button{width:100%;margin-top:10px;height:46px;border:0;border-radius:10px;background:#4f8cff;color:#fff;font-weight:750}.pin-error{min-height:20px;color:#ff8d8d;font-size:13px;margin-top:9px;text-align:center}
 @media(max-width:600px){header{height:44px;padding:0 10px}.file-info{max-width:75%}}
 </style>
 </head>
@@ -33,11 +35,20 @@ header{height:54px;display:flex;align-items:center;justify-content:space-between
   <div class="toolbar"><button class="tool" id="fullscreen" type="button">Full Screen</button><button class="tool" id="reconnect" type="button">Reconnect</button></div>
   <button id="enter" type="button">Start Display</button>
 </div>
+<div id="pinGate">
+  <div class="pin-card">
+    <h2>Protected Session</h2>
+    <p>This Cast-O-Matic room requires the session PIN before content can be received.</p>
+    <input id="pinInput" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="PIN">
+    <button id="pinSubmit" type="button">Unlock Session</button>
+    <div class="pin-error" id="pinError"></div>
+  </div>
+</div>
 <script>
 const ROOM={{ room|tojson }};
 const socket=io();
 const rtcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
-let pc=null,pending=[],senderId=null;
+let pc=null,pending=[],senderId=null,directChunks=[],directMeta=null,directBytes=0;
 const placeholder=document.getElementById("placeholder");
 const pdf=document.getElementById("pdf"),office=document.getElementById("office"),image=document.getElementById("image"),video=document.getElementById("video"),audio=document.getElementById("audio"),text=document.getElementById("text"),enter=document.getElementById("enter"),fileInfo=document.getElementById("fileInfo");
 
@@ -69,11 +80,47 @@ async function flush(){
   for(const c of pending){try{await pc.addIceCandidate(new RTCIceCandidate(c))}catch(e){}}
   pending=[];
 }
+function showDirectFile(meta,blob){
+  const url=URL.createObjectURL(blob);
+  baseShow(meta.name);
+  const mime=meta.mime||"application/octet-stream";
+  const ext=(meta.name.split(".").pop()||"").toLowerCase();
+  if(mime==="application/pdf"||ext==="pdf"){pdf.src=url;pdf.style.display="block";return}
+  if(mime.startsWith("image/")){image.src=url;image.style.display="block";return}
+  if(mime.startsWith("video/")){video.src=url;video.controls=true;video.style.display="block";video.play().catch(()=>enter.style.display="block");return}
+  if(mime.startsWith("audio/")){audio.src=url;audio.controls=true;audio.style.display="block";audio.play().catch(()=>enter.style.display="block");return}
+  if(mime.startsWith("text/")){blob.text().then(v=>{text.textContent=v;text.style.display="block"});return}
+  fileInfo.innerHTML="<b>"+escapeHtml(meta.name)+"</b><a class='download' href='"+url+"' download='"+escapeHtml(meta.name)+"'>Download</a>";
+}
+function setupDataChannel(channel){
+  channel.binaryType="arraybuffer";
+  channel.onmessage=async event=>{
+    if(typeof event.data==="string"){
+      let msg;try{msg=JSON.parse(event.data)}catch(e){return}
+      if(msg.type==="file-start"){
+        directMeta=msg;directChunks=[];directBytes=0;
+        placeholder.style.display="none";hideContent();fileInfo.style.display="block";
+        fileInfo.innerHTML="<b>Receiving directly: "+escapeHtml(msg.name)+"</b>";
+      }else if(msg.type==="file-end"&&directMeta){
+        const blob=new Blob(directChunks,{type:directMeta.mime||"application/octet-stream"});
+        showDirectFile(directMeta,blob);
+        directChunks=[];directMeta=null;directBytes=0;
+      }
+      return;
+    }
+    if(directMeta){
+      const chunk=event.data instanceof ArrayBuffer?event.data:await event.data.arrayBuffer();
+      directChunks.push(chunk);directBytes+=chunk.byteLength;
+      fileInfo.innerHTML="<b>Receiving directly: "+escapeHtml(directMeta.name)+"</b> &middot; "+Math.round(directBytes/directMeta.size*100)+"%";
+    }
+  };
+}
 async function connectWebRTC(offer,id){
   senderId=id||senderId;
   if(pc){try{pc.close()}catch(e){}}
   pending=[];
   pc=new RTCPeerConnection(rtcConfig);
+  pc.ondatachannel=e=>setupDataChannel(e.channel);
   pc.ontrack=e=>{
     video.srcObject=e.streams[0]||new MediaStream([e.track]);
     showLiveStream();
@@ -112,6 +159,15 @@ socket.on("peer_left",d=>{
   if(d?.peer_id===senderId){try{pc?.close()}catch(e){}pc=null;senderId=null;hideContent();placeholder.style.display="block";placeholder.querySelector(".placeholder-sub").textContent="Presenter disconnected. Waiting for a new connection."}
 });
 enter.onclick=()=>{video.play().then(()=>enter.style.display="none").catch(()=>{});audio.play().then(()=>enter.style.display="none").catch(()=>{})};
+function submitPin(){
+  const pin=pinInput.value.trim();
+  if(!/^\d{4,8}$/.test(pin)){pinError.textContent="Enter the 4 to 8 digit session PIN.";return}
+  pinError.textContent="Checking PIN...";
+  socket.emit("verify_pin",{room:ROOM,pin});
+}
+pinSubmit.onclick=submitPin;
+pinInput.addEventListener("keydown",e=>{if(e.key==="Enter")submitPin()});
+
 document.getElementById("fullscreen").onclick=async()=>{
   try{
     if(!document.fullscreenElement)await document.documentElement.requestFullscreen();

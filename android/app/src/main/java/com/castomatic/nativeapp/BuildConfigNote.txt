@@ -1,0 +1,13 @@
+The Web app URL is intentionally centralized.
+
+For a local demo, change BuildConfig.WEB_APP_URL in app/build.gradle.kts
+to your laptop LAN address, for example:
+
+http://192.168.1.5:5080
+
+For the deployed web app use:
+
+https://cast-o-matic.onrender.com
+
+The native shell is designed to preserve the existing web/WebRTC experience
+while adding native nearby-device discovery.
